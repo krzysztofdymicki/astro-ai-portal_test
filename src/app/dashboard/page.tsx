@@ -25,6 +25,7 @@ export default function Dashboard() {
         router.push('/');
       }
     } catch (error) {
+        console.error(error);
       toast.error("Wystąpił nieoczekiwany błąd");
     } finally {
       setLoading(false);
