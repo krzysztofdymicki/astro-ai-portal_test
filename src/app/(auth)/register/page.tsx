@@ -160,22 +160,21 @@ export default function Register() {
         </div>
         
         <div className="flex flex-col gap-2">
-          <Button 
-            variant="outline" 
-            className="w-full btn-secondary"
-            onClick={handleResendEmail}
-            disabled={loading}
-          >
-            {loading ? 'Wysyłanie...' : 'Wyślij ponownie link aktywacyjny'}
-          </Button>
+        <Button 
+          variant="outline"
+          className="w-full text-indigo-700 border-indigo-300 hover:bg-indigo-100/50 mb-2"
+          onClick={handleResendEmail}
+          disabled={loading}
+        >
+        {loading ? 'Wysyłanie...' : 'Wyślij ponownie link aktywacyjny'}
+        </Button>
           
-          <Button 
-            variant="secondary" 
-            className="w-full btn-primary"
-            onClick={() => router.push('/login')}
-          >
-            Przejdź do logowania
-          </Button>
+        <Button 
+          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
+          onClick={() => router.push('/login')}
+        >
+          Przejdź do logowania
+        </Button>
         </div>
       </div>
     )
