@@ -133,6 +133,7 @@ export default function Register() {
         });
       }
     } catch (err) {
+      console.log(err)
       toast.error("Błąd", { description: "Nie udało się ponownie wysłać emaila" });
     } finally {
       setLoading(false);

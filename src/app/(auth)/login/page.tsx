@@ -115,6 +115,7 @@ export default function Login() {
         });
       }
     } catch (err) {
+      console.log(err)
       toast.error("Błąd", { description: "Nie udało się wysłać linku do resetowania hasła" });
     } finally {
       setLoading(false);
