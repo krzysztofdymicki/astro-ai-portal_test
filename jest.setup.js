@@ -57,3 +57,49 @@ console.error = (...args) => {
   }
   originalConsoleError(...args);
 };
+
+// Improve error message formatting
+beforeEach(() => {
+  jest.spyOn(console, 'error').mockImplementation((...args) => {
+    if (args[0]?.includes?.('Warning:')) {
+      return;
+    }
+    console.log('[Test Error]:', ...args);
+  });
+});
+
+// Mock Date.now globally to avoid issues
+const originalDateNow = Date.now;
+beforeAll(() => {
+  Date.now = jest.fn(() => 1645564409000); // Fix timestamp to Feb 22, 2022
+});
+
+afterAll(() => {
+  Date.now = originalDateNow;
+});
+
+// Pomoc dla TestingLibrary - lepsze logowanie
+import { configure } from '@testing-library/react';
+
+configure({
+  getElementError: (message) => {
+    const error = new Error(message);
+    error.name = 'TestingLibraryElementError';
+    return error;
+  }
+});
+
+// Globalne mocki dla window.requestAnimationFrame
+window.requestAnimationFrame = (callback) => {
+  setTimeout(callback, 0);
+  return 0;
+};
+
+// Ulepszony mock dla Date.now
+beforeAll(() => {
+  global.Date.now = jest.fn(() => 1645564409000); // Feb 22, 2022
+});
+
+afterAll(() => {
+  global.Date.now = originalDateNow;
+});

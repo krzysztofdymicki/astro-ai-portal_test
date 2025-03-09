@@ -2,6 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import HomePage from '../app/page';
+import { getHeadingByText, getParagraphByText } from '../utils/test-utils';
 
 // Mock dla komponentu CosmicBackground
 jest.mock('../components/background/CosmicBackground', () => ({
@@ -13,15 +14,15 @@ describe('HomePage Component', () => {
   test('renderuje stronę główną z prawidłowymi elementami', () => {
     render(<HomePage />);
     
-    // Sprawdzenie nagłówków i tekstów
-    expect(screen.getByText(/twoja przepowiednia/i)).toBeInTheDocument();
+    // Użyj bardziej specyficznych selektorów
+    expect(getHeadingByText(/twoja przepowiednia/i)).toBeInTheDocument();
     expect(screen.getByText(/odkryj swoją przyszłość/i)).toBeInTheDocument();
     expect(screen.getByText(/z pomocą doświadczonych astrologów/i)).toBeInTheDocument();
     expect(screen.getByText(/personalizowane horoskopy/i)).toBeInTheDocument();
     
     // Sprawdzenie przycisków i linków
     expect(screen.getByRole('link', { name: /zaloguj się/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /zarejestruj się/i, exact: false })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /zarejestruj się/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /rozpocznij za darmo/i })).toBeInTheDocument();
     
     // Sprawdzenie sekcji zalet
@@ -52,16 +53,27 @@ describe('HomePage Component', () => {
   });
 
   test('wyświetla aktualny rok w stopce', () => {
-    // Mockowanie Date.getFullYear()
+    // Poprawione mockowanie Date
+    const originalDate = global.Date;
     const mockDate = new Date(2023, 0, 1);
-    jest.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as string);
+    
+    global.Date = class extends Date {
+      constructor() {
+        super();
+        return mockDate;
+      }
+      static now() { return mockDate.getTime(); }
+    } as DateConstructor;
     
     render(<HomePage />);
     
-    // Sprawdzenie czy rok jest poprawnie wyświetlany w stopce
-    expect(screen.getByText(/2023 twoja przepowiednia\. wszystkie prawa zastrzeżone\./i)).toBeInTheDocument();
+    // Użyj bardziej specyficznego selektora dla stopki
+    const footerText = screen.getByText((content) => {
+      return content.includes('2023 Twoja Przepowiednia');
+    });
+    expect(footerText).toBeInTheDocument();
     
-    // Przywrócenie oryginalnej implementacji Date
-    jest.restoreAllMocks();
+    // Przywracanie prawdziwego Date
+    global.Date = originalDate;
   });
 });

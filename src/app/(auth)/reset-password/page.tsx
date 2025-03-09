@@ -135,7 +135,11 @@ export default function ResetPassword() {
         </p>
       </div>
 
-      <form onSubmit={handleResetPassword} className="space-y-4">
+      <form 
+        onSubmit={handleResetPassword} 
+        className="space-y-4"
+        data-testid="reset-password-form"
+      >
         <div className="space-y-2">
           <Label htmlFor="password" className="form-label">Nowe hasło</Label>
           <div className="relative">
@@ -150,6 +154,7 @@ export default function ResetPassword() {
               }}
               className={`form-input pr-10 ${fieldErrors.password ? "error" : ""}`}
               required
+              data-testid="password-input"
             />
             <button 
               type="button"
@@ -181,6 +186,7 @@ export default function ResetPassword() {
             }}
             className={`form-input ${fieldErrors.confirmPassword ? "error" : ""}`}
             required
+            data-testid="confirm-password-input"
           />
         </div>
         

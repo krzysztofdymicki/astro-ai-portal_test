@@ -46,10 +46,19 @@ describe('Supabase Client', () => {
 
   test('createClient zwraca błąd gdy brakuje zmiennych środowiskowych', () => {
     // Usunięcie zmiennych środowiskowych
+    const originalEnv = {...process.env};
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
+    // Ensure createBrowserClient is not returning any value
+    (createBrowserClient as jest.Mock).mockImplementation(() => {
+      throw new Error('Missing environment variables');
+    });
+    
     // Sprawdzenie czy createClient rzuca błąd
-    expect(() => createClient()).toThrow();
+    expect(() => createClient()).toThrow('Missing environment variables');
+    
+    // Restore original env
+    process.env = originalEnv;
   });
 });

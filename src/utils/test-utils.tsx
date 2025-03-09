@@ -1,6 +1,7 @@
 // src/utils/test-utils.tsx
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 // Deklaracja interfejsu dla rozszerzonych opcji renderowania
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -91,3 +92,58 @@ export function mockLocalStorage() {
     }),
   };
 }
+
+/**
+ * Helper to get element by text when multiple elements might contain the same text
+ * @param container The container to search within
+ * @param text The text to search for
+ * @param selector Optional CSS selector to filter elements
+ * @param index Which occurrence to return (defaults to first)
+ */
+export function getElementByText(
+  container: HTMLElement,
+  text: RegExp | string,
+  selector?: string,
+  index = 0
+): HTMLElement {
+  const elements = [...container.querySelectorAll(selector || '*')]
+    .filter(el => el.textContent && (
+      typeof text === 'string' 
+        ? el.textContent.includes(text)
+        : text.test(el.textContent)
+    ));
+  
+  if (!elements[index]) {
+    throw new Error(`Element with text "${text}" at index ${index} not found`);
+  }
+  
+  return elements[index] as HTMLElement;
+}
+
+/**
+ * Znajduje element po tekście, ale używa selektora do zdefiniowania konkretnego typu elementu
+ */
+export function getTextInElement(text: RegExp | string, selector: string) {
+  return screen.getByText((content, element) => {
+    if (!element) return false;
+    return element.tagName.toLowerCase() === selector && 
+           (typeof text === 'string' ? content === text : text.test(content));
+  });
+}
+
+/**
+ * Znajduje element po tekście, ale używa selektora do zdefiniowania konkretnego typu elementu
+ */
+export function getElementByTextAndTag(text: RegExp | string, tagName: string) {
+  return screen.getByText((content, element) => {
+    if (!element) return false;
+    return element.tagName.toLowerCase() === tagName && 
+           (typeof text === 'string' ? content === text : text.test(content));
+  });
+}
+
+export const getHeadingByText = (text: RegExp | string) => getElementByTextAndTag(text, 'h1');
+export const getParagraphByText = (text: RegExp | string) => getElementByTextAndTag(text, 'p');
+
+// Inne przydatne funkcje pomocnicze
+export const getLabelByText = (text: RegExp | string) => getTextInElement(text, 'label');

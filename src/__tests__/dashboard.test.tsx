@@ -50,9 +50,9 @@ describe('Dashboard Component', () => {
     render(<Dashboard />);
     
     // Sprawdzenie czy główne elementy interfejsu są wyświetlane
-    expect(screen.getByText(/twoja przepowiednia/i)).toBeInTheDocument();
-    expect(screen.getByText(/panel użytkownika/i)).toBeInTheDocument();
-    expect(screen.getByText(/twoje osobiste centrum astrologiczne/i)).toBeInTheDocument();
+    expect(screen.getByText('Twoja Przepowiednia')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /panel użytkownika/i })).toBeInTheDocument();
+    expect(screen.getByText('Twoje osobiste centrum astrologiczne')).toBeInTheDocument();
     expect(screen.getByText(/strona w budowie/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /wyloguj się/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sprawdź swój horoskop/i })).toBeInTheDocument();
@@ -121,17 +121,21 @@ describe('Dashboard Component', () => {
   });
 
   test('wyświetla aktualny rok w stopce', () => {
-    // Mockowanie Date.getFullYear()
+    // Mockowanie Date correctly
+    const realDate = Date;
     const mockDate = new Date(2023, 0, 1);
+    
     jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
+    global.Date.now = jest.fn(() => mockDate.getTime());
     
     render(<Dashboard />);
     
     // Sprawdzenie czy rok jest poprawnie wyświetlany w stopce
-    expect(screen.getByText(/2023 twoja przepowiednia\. wszystkie prawa zastrzeżone\./i)).toBeInTheDocument();
+    expect(screen.getByText(/2023 twoja przepowiednia\. wszystkie prawa zastrzeżone\./i))
+      .toBeInTheDocument();
     
     // Przywrócenie oryginalnej implementacji Date
-    jest.restoreAllMocks();
+    (global.Date as any).mockRestore();
   });
 
   test('przyciski są domyślnie włączone', () => {

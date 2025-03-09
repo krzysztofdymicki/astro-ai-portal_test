@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
+import CosmicBackground from '@/components/background/CosmicBackground';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -34,6 +35,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Add CosmicBackground component */}
+      <CosmicBackground data-testid="cosmic-background" />
+      
       {/* Nawigacja */}
       <header className="bg-indigo-900/70 backdrop-blur-sm shadow-md z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

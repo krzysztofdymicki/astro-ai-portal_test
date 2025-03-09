@@ -131,7 +131,12 @@ export default function Login() {
         </p>
       </div>
 
-      <form onSubmit={handleSignIn} className="space-y-4">
+      {/* Formularz logowania */}
+      <form 
+        onSubmit={handleSignIn} 
+        className="space-y-4"
+        aria-label="login-form"
+      >
         <div className="space-y-2">
           <Label htmlFor="email" className="form-label">Email</Label>
           <Input
@@ -145,17 +150,19 @@ export default function Login() {
             }}
             className={`form-input ${fieldErrors.email ? "error" : ""}`}
             required
+            data-testid="email-input"
           />
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <Label htmlFor="password" className="form-label">Hasło</Label>
+            <Label htmlFor="password" className="form-label" data-testid="password-label">Hasło</Label>
             <button 
               type="button" 
               onClick={handleResetPassword}
               className="text-xs text-indigo-600 hover:text-indigo-800 text-light"
               disabled={loading}
+              data-testid="forgot-password-button"
             >
               Zapomniałeś hasła?
             </button>
@@ -172,6 +179,8 @@ export default function Login() {
               }}
               className={`form-input pr-10 ${fieldErrors.password ? "error" : ""}`}
               required
+              data-testid="password-input"
+              aria-labelledby="password-label"
             />
             <button 
               type="button"
@@ -179,6 +188,7 @@ export default function Login() {
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
               aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+              data-testid="toggle-password-visibility"
             >
               {showPassword ? (
                 <EyeOffIcon className="h-5 w-5" />

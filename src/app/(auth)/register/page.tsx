@@ -189,7 +189,11 @@ export default function Register() {
         </p>
       </div>
 
-      <form onSubmit={handleSignUp} className="space-y-4">
+      <form 
+        onSubmit={handleSignUp} 
+        className="space-y-4"
+        data-testid="register-form"
+      >
         <div className="space-y-2">
           <Label htmlFor="email" className="form-label">Email</Label>
           <Input
@@ -203,6 +207,7 @@ export default function Register() {
             }}
             className={`form-input ${fieldErrors.email ? "error" : ""}`}
             required
+            data-testid="email-input"
           />
         </div>
         
@@ -220,19 +225,16 @@ export default function Register() {
               }}
               className={`form-input pr-10 ${fieldErrors.password ? "error" : ""}`}
               required
+              data-testid="password-input"
             />
-            <button 
+            <button
               type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
               onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1} // Pomijanie podczas nawigacji tabem
+              className="absolute inset-y-0 right-0 px-3 flex items-center"
               aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+              data-testid="toggle-password-visibility"
             >
-              {showPassword ? (
-                <EyeOffIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
+              {showPassword ? <EyeOffIcon className="h-5 w-5 text-gray-500" /> : <EyeIcon className="h-5 w-5 text-gray-500" />}
             </button>
           </div>
           <p className="text-xs text-gray-500 text-light">Hasło musi zawierać co najmniej 6 znaków</p>
@@ -251,6 +253,7 @@ export default function Register() {
             }}
             className={`form-input ${fieldErrors.confirmPassword ? "error" : ""}`}
             required
+            data-testid="confirm-password-input"
           />
         </div>
         

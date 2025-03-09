@@ -10,6 +10,19 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
+  fakeTimers: {
+    enableGlobally: true
+  },
+  reporters: [
+    'default',
+    ['jest-html-reporter', {
+      pageTitle: 'Astro AI Portal Tests',
+      outputPath: './test-results/test-report.html',
+      includeFailureMsg: true,
+      includeConsoleLog: true,
+      useCssFile: true
+    }]
+  ],
   moduleNameMapper: {
     // Aliasy dla importów
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
