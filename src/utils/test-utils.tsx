@@ -2,6 +2,7 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { screen } from '@testing-library/react';
+import RootLayout from '../app/layout';
 
 // Deklaracja interfejsu dla rozszerzonych opcji renderowania
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -147,3 +148,7 @@ export const getParagraphByText = (text: RegExp | string) => getElementByTextAnd
 
 // Inne przydatne funkcje pomocnicze
 export const getLabelByText = (text: RegExp | string) => getTextInElement(text, 'label');
+
+export function renderWithLayout(ui: React.ReactElement) {
+  return render(<RootLayout>{ui}</RootLayout>);
+}

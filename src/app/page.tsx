@@ -1,14 +1,10 @@
 // src/app/page.tsx
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import CosmicBackground from '@/components/background/CosmicBackground'
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Kosmiczne tło */}
-      <CosmicBackground />
-      
       <header className="bg-transparent z-10 py-4 sm:py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
@@ -105,17 +101,17 @@ export default function Home() {
       </main>
       <div className="h-16 bg-gradient-to-b from-transparent to-[rgba(10,5,25,0.3)] backdrop-blur-[1px] mt-8"></div>
 
-{/* Stopka z płynnym przejściem */}
-<footer className="relative z-10">
-  {/* Gradient przejścia w stopce */}
-  <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,5,25,0.3)] to-[rgba(10,5,25,0.6)] backdrop-blur-[2px]"></div>
-  
-  <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-    <p className="text-center text-sm text-indigo-200/80 text-light">
-      &copy; {new Date().getFullYear()} Twoja Przepowiednia. Wszystkie prawa zastrzeżone.
-    </p>
-  </div>
-</footer>
-</div>
+      {/* Stopka z płynnym przejściem */}
+      <footer className="relative z-10">
+        {/* Gradient przejścia w stopce */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,5,25,0.3)] to-[rgba(10,5,25,0.6)] backdrop-blur-[2px]"></div>
+        
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-indigo-200/80 text-light">
+            &copy; {new Date().getFullYear()} Twoja Przepowiednia. Wszystkie prawa zastrzeżone.
+          </p>
+        </div>
+      </footer>
+    </div>
   )
 }

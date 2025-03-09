@@ -1,9 +1,10 @@
-// src/app/page.tsx
+// src/app/layout.tsx
 
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from "@/components/ui/sonner"
+import CosmicBackground from '@/components/background/CosmicBackground'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,10 +18,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // W root layout NIE POWINNO być sprawdzania sesji ani przekierowań!
   return (
     <html lang="pl">
       <body className={inter.className}>
+        {/* Dodanie CosmicBackground tutaj, aby był dostępny na wszystkich stronach */}
+        <CosmicBackground />
         {children}
         <Toaster />
       </body>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import HomePage from '../app/page';
-import { getHeadingByText, getParagraphByText } from '../utils/test-utils';
+import { getHeadingByText, getParagraphByText, renderWithLayout } from '../utils/test-utils';
 
 // Mock dla komponentu CosmicBackground
 jest.mock('../components/background/CosmicBackground', () => ({
@@ -38,9 +38,6 @@ describe('HomePage Component', () => {
     expect(screen.getByText(/co mówią nasi klienci/i)).toBeInTheDocument();
     expect(screen.getByText(/- anna k\., warszawa/i)).toBeInTheDocument();
     expect(screen.getByText(/- marek w\., kraków/i)).toBeInTheDocument();
-    
-    // Sprawdzenie czy tło kosmiczne jest wyrenderowane
-    expect(screen.getByTestId('cosmic-background')).toBeInTheDocument();
   });
 
   test('linki mają odpowiednie adresy URL', () => {
@@ -75,5 +72,14 @@ describe('HomePage Component', () => {
     
     // Przywracanie prawdziwego Date
     global.Date = originalDate;
+  });
+});
+
+describe('HomePage Component with Layout', () => {
+  test('renderuje stronę główną z layoutem', () => {
+    renderWithLayout(<HomePage />);
+    
+    // Now you can test for layout components
+    expect(screen.getByTestId('cosmic-background')).toBeInTheDocument();
   });
 });

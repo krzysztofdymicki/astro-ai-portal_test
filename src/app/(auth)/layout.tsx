@@ -16,8 +16,6 @@ export default function AuthLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Komponent gwieździstego tła */}
-      <CosmicBackground />
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         {/* Logo lub emoji */}
