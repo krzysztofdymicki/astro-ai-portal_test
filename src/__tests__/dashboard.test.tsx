@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import * as supabaseClient from '../utils/supabase/client';
 import { mockCreateClient, mockSupabaseClient } from '../utils/test-utils';
 import { within } from '@testing-library/react';
-import { UserProvider } from '../context/UserContext'; // Import UserProvider
+import { UserProvider } from '../contexts/UserContext'; // Import UserProvider
 
 // Mock modułów
 jest.mock('next/navigation', () => ({
@@ -32,25 +32,6 @@ jest.mock('../components/background/CosmicBackground', () => ({
   __esModule: true,
   default: () => <div data-testid="cosmic-background" />
 }));
-
-// Pomocnicza funkcja do znajdowania elementów w portalach
-interface FindElementInPortalsParams {
-  dataTestId: string;
-  timeoutMs?: number;
-}
-
-const findElementInPortals = async ({ dataTestId, timeoutMs = 200 }: FindElementInPortalsParams): Promise<HTMLElement> => {
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      const element = document.querySelector(`[data-testid="${dataTestId}"]`) as HTMLElement | null;
-      if (element) {
-        resolve(element);
-      } else {
-        reject(new Error(`Nie znaleziono elementu [data-testid="${dataTestId}"]`));
-      }
-    }, timeoutMs);
-  });
-};
 
 describe('Dashboard Component', () => {
   const mockPush = jest.fn();
@@ -114,6 +95,7 @@ describe('Dashboard Component', () => {
       return mockSupabaseClient;
     });
   });
+  
   test('renderuje dashboard z prawidłowymi elementami UI', async () => {
     render(
       <UserProvider>
@@ -121,23 +103,21 @@ describe('Dashboard Component', () => {
       </UserProvider>
     );
     
-    // Czekamy na załadowanie danych użytkownika
-    // Czekamy na załadowanie danych użytkownika
+    // Czekamy na załadowanie komponentu i sprawdzamy jego podstawowe elementy
     await waitFor(() => {
-      // Sprawdzenie podstawowych elementów
-      expect(screen.getByText('Twoja Przepowiednia')).toBeInTheDocument();
+      // Sprawdzenie czy główny kontener dashboardu jest renderowany
+      expect(screen.getByTestId('dashboard-container')).toBeInTheDocument();
       
-      // Sprawdzenie czy menu użytkownika jest renderowane
-      expect(screen.getByTestId('user-avatar-button')).toBeInTheDocument();
+      // Sprawdzenie czy kafelki są renderowane
+      expect(screen.getByTestId('profile-card')).toBeInTheDocument();
+      expect(screen.getByTestId('questions-card')).toBeInTheDocument();
+      expect(screen.getByTestId('horoscopes-card')).toBeInTheDocument();
       
-      // Sprawdzenie czy kafelki dashboardu są wyświetlane
-      expect(screen.getByText('Twój Profil Astralny')).toBeInTheDocument();
-      expect(screen.getByText('Pytania Dodatkowe')).toBeInTheDocument();
-      expect(screen.getByText('Twoje Horoskopy')).toBeInTheDocument();
+      // Sprawdzenie czy cytat jest renderowany
+      expect(screen.getByTestId('quote-container')).toBeInTheDocument();
     });
   });
 
-  // Poniżej trzeba będzie zaimplementować test
   test('przekierowuje do strony profilu po kliknięciu "Uzupełnij profil"', async () => {
     render(
       <UserProvider>
@@ -146,11 +126,15 @@ describe('Dashboard Component', () => {
     );
     
     // Czekamy na załadowanie komponentu
-
-  test('przekierowuje do strony profilu po kliknięciu "Uzupełnij profil"', async () => {
-    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-button')).toBeInTheDocument();
+    });
     
-    // Czekamy na załadowanie komponentu
+    // Sprawdzamy, czy link prowadzi do prawidłowej ścieżki
+    const profileLink = screen.getByTestId('profile-link');
+    expect(profileLink).toHaveAttribute('href', '/dashboard/profile');
+  });
+
   test('przekierowuje do strony pytań po kliknięciu "Odpowiedz na pytania"', async () => {
     render(
       <UserProvider>
@@ -159,9 +143,13 @@ describe('Dashboard Component', () => {
     );
     
     // Czekamy na załadowanie komponentu
+    await waitFor(() => {
+      expect(screen.getByTestId('questions-button')).toBeInTheDocument();
+    });
+    
     // Sprawdzamy, czy link prowadzi do prawidłowej ścieżki
-    const profileButton = screen.getByRole('link', { name: /uzupełnij profil/i });
-    expect(profileButton).toHaveAttribute('href', '/dashboard/profile');
+    const questionsLink = screen.getByTestId('questions-link');
+    expect(questionsLink).toHaveAttribute('href', '/dashboard/questions');
   });
 
   test('przekierowuje do strony horoskopów po kliknięciu "Przeglądaj horoskopy"', async () => {
@@ -173,16 +161,14 @@ describe('Dashboard Component', () => {
     
     // Czekamy na załadowanie komponentu
     await waitFor(() => {
-      expect(screen.getByText('Odpowiedz na pytania')).toBeInTheDocument();
+      expect(screen.getByTestId('horoscopes-button')).toBeInTheDocument();
     });
     
     // Sprawdzamy, czy link prowadzi do prawidłowej ścieżki
-    const questionsButton = screen.getByRole('link', { name: /odpowiedz na pytania/i });
-    expect(questionsButton).toHaveAttribute('href', '/dashboard/questions');
+    const horoscopesLink = screen.getByTestId('horoscopes-link');
+    expect(horoscopesLink).toHaveAttribute('href', '/dashboard/horoscopes');
   });
 
-  test('przekierowuje do strony horoskopów po kliknięciu "Przeglądaj horoskopy"', async () => {
-    render(<Dashboard />);
   test('wyświetla prawidłowe dane profilu użytkownika', async () => {
     render(
       <UserProvider>
@@ -191,50 +177,21 @@ describe('Dashboard Component', () => {
     );
     
     // Czekamy na załadowanie danych użytkownika
-    });
-    
-    // Sprawdzamy, czy link prowadzi do prawidłowej ścieżki
-    const horoscopesButton = screen.getByRole('link', { name: /przeglądaj horoskopy/i });
-    expect(horoscopesButton).toHaveAttribute('href', '/dashboard/horoscopes');
-  });
-
-  // Poniżej trzeba będzie zaimplementować testy
-  test('wyświetla aktualny rok w stopce', async () => {
-    // Mock dla currentYear
-    const currentYear = new Date().getFullYear();
-    
-    render(
-      <UserProvider>
-        <Dashboard />
-      </UserProvider>
-    );
-    
-    // Czekamy na załadowanie komponentu
-    
-    // Czekamy na załadowanie danych użytkownika
     await waitFor(() => {
-      // Sprawdzenie powitania z imieniem użytkownika
-      expect(screen.getByText('Witaj, Jan')).toBeInTheDocument();
+      // Sprawdzenie czy nagłówek z powitaniem zawiera imię użytkownika
+      const welcomeHeading = screen.getByTestId('welcome-heading');
+      expect(welcomeHeading.textContent).toContain('Jan');
       
       // Sprawdzenie postępu uzupełnienia profilu
-      expect(screen.getByText('60% ukończono')).toBeInTheDocument();
+      const progressPercentage = screen.getByTestId('profile-completion-percentage');
+      expect(progressPercentage.textContent).toBe('60%');
       
-      // Sprawdzenie daty urodzenia w kafelku profilu
-      expect(screen.getByText('1990-01-01')).toBeInTheDocument();
+      // Sprawdzenie czy pasek postępu ma odpowiednią szerokość
+      const progressBar = screen.getByTestId('profile-progress-bar');
+      expect(progressBar).toHaveStyle('width: 60%');
     });
   });
 
-  test('wyświetla aktualny rok w stopce', async () => {
-    // Mock dla currentYear
-    const currentYear = new Date().getFullYear();
-    
-    render(<Dashboard />);
-    
-    // Czekamy na załadowanie komponentu
-    await waitFor(() => {
-      // Sprawdzenie czy rok jest poprawnie wyświetlany w stopce
-      const footerText = screen.getByText(new RegExp(`${currentYear} Twoja Przepowiednia`, 'i'));
-      expect(footerText).toBeInTheDocument();
-    });
-  });
+  // Usuwamy test dotyczący roku w stopce, ponieważ stopka jest teraz w komponencie layout
+  // To by było bardziej odpowiednie w teście dla komponentu layout
 });
