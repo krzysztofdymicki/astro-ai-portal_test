@@ -7,11 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Star, Award, ArrowRight, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Star, 
+  Award, 
+  ArrowRight, 
+  HelpCircle, 
+  CheckCircle2, 
+  Info
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function QuestionsPage() {
-  const { profileQuestions, profileAnswers, credits, loading, submitProfileAnswer, isQuestionAnswered, getQuestionAnswer } = useUser();
+  const { 
+    profileQuestions, 
+    credits, 
+    loading, 
+    questionsStats, 
+    submitProfileAnswer, 
+    isQuestionAnswered, 
+    getQuestionAnswer 
+  } = useUser();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answerText, setAnswerText] = useState('');
@@ -59,21 +75,32 @@ export default function QuestionsPage() {
       }, 2000);
     }
   };
-  
-  // Obliczenie procentu ukończenia
-  const answeredCount = profileQuestions.length > 0 
-    ? profileQuestions.filter(q => isQuestionAnswered(q.id)).length 
-    : 0;
-    
-  const completionPercentage = profileQuestions.length > 0
-    ? (answeredCount / profileQuestions.length) * 100
-    : 0;
 
   // Pobierz bieżące pytanie
   const currentQuestion = profileQuestions[currentQuestionIndex];
   const isCurrentQuestionAnswered = currentQuestion 
     ? isQuestionAnswered(currentQuestion.id)
     : false;
+
+  // Skategoryzowane pytania (jeśli dostępne)
+  const questionsByCategory = profileQuestions.reduce((acc, question) => {
+    // Sprawdź czy mamy dane kategorii
+    const categoryId = question.category_id || 'uncategorized';
+    const categoryName = question.question_categories?.name || 'Inne';
+    
+    // Inicjalizuj kategorię, jeśli jeszcze nie istnieje
+    if (!acc[categoryId]) {
+      acc[categoryId] = {
+        name: categoryName,
+        icon: question.question_categories?.icon || 'help-circle',
+        questions: []
+      };
+    }
+    
+    // Dodaj pytanie do kategorii
+    acc[categoryId].questions.push(question);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6 py-4" data-testid="questions-page-container">
@@ -111,15 +138,25 @@ export default function QuestionsPage() {
             <div className="flex justify-between items-center">
               <span className="text-indigo-200">Postęp odpowiedzi</span>
               <span className="text-indigo-100 font-medium">
-                {answeredCount} / {profileQuestions.length}
+                {questionsStats.answeredQuestions} / {questionsStats.totalQuestions}
               </span>
             </div>
             <Progress 
-              value={completionPercentage} 
+              value={questionsStats.completionPercentage} 
               className="h-2 bg-indigo-950"
             />
+            <div className="flex justify-between items-center mt-2">
+              <div className="flex items-center">
+                <Info className="h-4 w-4 text-indigo-400 mr-1" />
+                <span className="text-indigo-300 text-xs">Do zdobycia: {questionsStats.remainingCredits} kredytów</span>
+              </div>
+              <div className="flex items-center">
+                <Award className="h-4 w-4 text-yellow-400 mr-1" />
+                <span className="text-indigo-300 text-xs">Zdobyte: {questionsStats.earnedCredits} kredytów</span>
+              </div>
+            </div>
             <p className="text-indigo-300 text-sm italic">
-              {completionPercentage === 100 
+              {questionsStats.completionPercentage === 100 
                 ? "Wszystkie pytania zostały ukończone! Wróć później po więcej." 
                 : "Każda odpowiedź przybliża nas do stworzenia jeszcze lepszej przepowiedni dla Ciebie."}
             </p>
@@ -164,7 +201,15 @@ export default function QuestionsPage() {
             <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all">
               <CardHeader>
                 <div className="flex justify-between items-center mb-2">
-                  <CardTitle className="text-xl">Pytanie {currentQuestionIndex + 1}</CardTitle>
+                  <CardTitle className="text-xl flex items-center">
+                    {/* Jeśli dostępne, pokaż ikonę i nazwę kategorii */}
+                    {currentQuestion.question_categories && (
+                      <span className="bg-indigo-800/60 text-xs px-2 py-1 rounded mr-2">
+                        {currentQuestion.question_categories.name}
+                      </span>
+                    )}
+                    <span>Pytanie {currentQuestionIndex + 1}</span>
+                  </CardTitle>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 text-yellow-300 mr-1" />
                     <span className="text-yellow-200 text-sm">
@@ -185,31 +230,51 @@ export default function QuestionsPage() {
                     {currentQuestion?.question}
                   </div>
                   
-                  <div className="mt-4">
-                    <Textarea
-                      value={answerText}
-                      onChange={(e) => {
-                        setAnswerText(e.target.value);
-                        setTextareaEmpty(e.target.value.trim() === '');
-                      }}
-                      placeholder="Wpisz swoją odpowiedź tutaj..."
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
-                      disabled={loading.submitting}
-                    />
-                    
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ 
-                        opacity: textareaEmpty ? 1 : 0,
-                        height: textareaEmpty ? 'auto' : 0
-                      }}
-                      className="mt-2 overflow-hidden"
-                    >
-                      <p className="text-amber-300/80 text-sm">
-                        Twoja odpowiedź pomoże nam lepiej dopasować horoskop do Twojej osobowości.
-                      </p>
-                    </motion.div>
-                  </div>
+                  {isCurrentQuestionAnswered ? (
+                    <div className="mt-4 p-4 bg-indigo-800/30 rounded-lg border border-indigo-500/30">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-indigo-100 font-medium mb-1">Twoja odpowiedź:</p>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                          >
+                            <p className="text-indigo-200 italic">
+                              {getQuestionAnswer(currentQuestion.id)}
+                            </p>
+                          </motion.div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4">
+                      <Textarea
+                        value={answerText}
+                        onChange={(e) => {
+                          setAnswerText(e.target.value);
+                          setTextareaEmpty(e.target.value.trim() === '');
+                        }}
+                        placeholder="Wpisz swoją odpowiedź tutaj..."
+                        className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
+                        disabled={loading.submitting}
+                      />
+                      
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ 
+                          opacity: textareaEmpty ? 1 : 0,
+                          height: textareaEmpty ? 'auto' : 0
+                        }}
+                        className="mt-2 overflow-hidden"
+                      >
+                        <p className="text-amber-300/80 text-sm">
+                          Twoja odpowiedź pomoże nam lepiej dopasować horoskop do Twojej osobowości.
+                        </p>
+                      </motion.div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               
@@ -266,7 +331,7 @@ export default function QuestionsPage() {
       {/* Navigation dots */}
       {profileQuestions.length > 0 && (
         <div className="flex justify-center mt-6 space-x-2">
-          {profileQuestions.map((_, idx) => (
+          {profileQuestions.map((question, idx) => (
             <button
               key={idx}
               onClick={() => {
@@ -275,7 +340,7 @@ export default function QuestionsPage() {
               className={`w-3 h-3 rounded-full transition-all ${
                 idx === currentQuestionIndex
                   ? "bg-indigo-400 scale-125"
-                  : isQuestionAnswered(profileQuestions[idx].id)
+                  : isQuestionAnswered(question.id)
                   ? "bg-indigo-600"
                   : "bg-indigo-900"
               }`}
@@ -320,29 +385,6 @@ export default function QuestionsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Custom styles */}
-      <style jsx global>{`
-        .mystical-glow {
-          text-shadow: 0 0 10px rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5);
-        }
-        
-        .loader {
-          width: 48px;
-          height: 48px;
-          border: 5px solid rgba(139, 92, 246, 0.3);
-          border-bottom-color: rgba(139, 92, 246, 0.8);
-          border-radius: 50%;
-          display: inline-block;
-          box-sizing: border-box;
-          animation: rotation 1s linear infinite;
-        }
-        
-        @keyframes rotation {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

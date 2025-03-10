@@ -53,6 +53,15 @@ interface LoadingState {
 }
 
 // Definicja kontekstu użytkownika - z dodanymi kredytami
+// Statystyki pytań
+interface QuestionsStats {
+  totalQuestions: number;
+  answeredQuestions: number;
+  completionPercentage: number;
+  earnedCredits: number;
+  remainingCredits: number;
+}
+
 interface UserContextType {
   // Dane użytkownika
   profile: UserProfile | null;
@@ -65,6 +74,9 @@ interface UserContextType {
   profileQuestions: ProfileQuestion[];
   profileAnswers: ProfileAnswer[];
   
+  // Statystyki pytań
+  questionsStats: QuestionsStats;
+  
   // Stan ładowania
   loading: LoadingState;
   
@@ -74,6 +86,7 @@ interface UserContextType {
   submitProfileAnswer: (questionId: string, answer: string) => Promise<boolean>;
   isQuestionAnswered: (questionId: string) => boolean;
   getQuestionAnswer: (questionId: string) => string | null;
+  getZodiacSignFromDate: (birthDate: string) => Promise<string | null>;
 }
 
 // Utworzenie kontekstu
@@ -102,6 +115,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Pytania i odpowiedzi
   const [profileQuestions, setProfileQuestions] = useState<ProfileQuestion[]>([]);
   const [profileAnswers, setProfileAnswers] = useState<ProfileAnswer[]>([]);
+  
+  // Statystyki pytań (domyślne wartości)
+  const [questionsStats, setQuestionsStats] = useState<QuestionsStats>({
+    totalQuestions: 0,
+    answeredQuestions: 0,
+    completionPercentage: 0,
+    earnedCredits: 0,
+    remainingCredits: 0
+  });
 
   // Funkcja do pobierania danych użytkownika
   const fetchUserData = async () => {
@@ -176,20 +198,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  // Pobranie znaków zodiaku
+  const fetchZodiacSigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('zodiac_signs')
+        .select('*');
+        
+      if (error) throw error;
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching zodiac signs:', error);
+      return [];
+    }
+  };
+  
   // Pobranie pytań profilowych
   const fetchProfileQuestions = async () => {
     setLoading(prev => ({ ...prev, questions: true }));
     try {
       const { data, error } = await supabase
         .from('profile_questions')
-        .select('*')
+        .select('*, question_categories(name, icon)')
         .eq('is_active', true)
-        .order('id');
+        .order('display_order', { ascending: true });
         
       if (error) throw error;
       
       if (data) {
         setProfileQuestions(data);
+        updateQuestionsStats(data, profileAnswers);
       }
     } catch (error) {
       console.error('Error fetching profile questions:', error);
@@ -212,6 +251,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       
       if (data) {
         setProfileAnswers(data);
+        updateQuestionsStats(profileQuestions, data);
       }
     } catch (error) {
       console.error('Error fetching user answers:', error);
@@ -219,6 +259,34 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(prev => ({ ...prev, answers: false }));
     }
+  };
+  
+  // Aktualizacja statystyk pytań
+  const updateQuestionsStats = (questions: ProfileQuestion[], answers: ProfileAnswer[]) => {
+    if (!questions.length) return;
+    
+    const answeredCount = answers.length;
+    const totalQuestions = questions.length;
+    const completionPercentage = Math.round((answeredCount / totalQuestions) * 100);
+    
+    // Obliczenie zdobytych kredytów
+    const answeredQuestionIds = new Set(answers.map(a => a.question_id));
+    const earnedCredits = questions
+      .filter(q => answeredQuestionIds.has(q.id))
+      .reduce((sum, q) => sum + q.credits_reward, 0);
+    
+    // Obliczenie pozostałych do zdobycia kredytów
+    const remainingCredits = questions
+      .filter(q => !answeredQuestionIds.has(q.id))
+      .reduce((sum, q) => sum + q.credits_reward, 0);
+    
+    setQuestionsStats({
+      totalQuestions,
+      answeredQuestions: answeredCount,
+      completionPercentage,
+      earnedCredits,
+      remainingCredits
+    });
   };
 
   // Funkcja do aktualizacji profilu
@@ -279,6 +347,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return answer ? answer.answer : null;
   };
   
+  // Funkcja do określania znaku zodiaku na podstawie daty urodzenia
+  const getZodiacSignFromDate = async (birthDate: string): Promise<string | null> => {
+    if (!birthDate) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('get_zodiac_sign_id', { birth_date: birthDate });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting zodiac sign:', error);
+      return null;
+    }
+  };
+
   // Dodanie odpowiedzi na pytanie profilowe
   const submitProfileAnswer = async (questionId: string, answer: string): Promise<boolean> => {
     if (!profile?.id) {
@@ -341,7 +425,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         
         if (data) {
           // Dodanie nowej odpowiedzi do lokalnej tablicy
-          setProfileAnswers(prev => [...prev, data]);
+          const updatedAnswers = [...profileAnswers, data];
+          setProfileAnswers(updatedAnswers);
+          
+          // Aktualizacja statystyk
+          updateQuestionsStats(profileQuestions, updatedAnswers);
           
           // Odświeżenie kredytów (które zostały przyznane przez trigger)
           await refreshCredits();
@@ -396,12 +484,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     credits,
     profileQuestions,
     profileAnswers,
+    questionsStats,
     loading,
     updateProfile,
     refreshUserData: fetchUserData,
     submitProfileAnswer,
     isQuestionAnswered,
-    getQuestionAnswer
+    getQuestionAnswer,
+    getZodiacSignFromDate
   };
 
   return (

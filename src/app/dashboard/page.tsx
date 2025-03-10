@@ -15,7 +15,7 @@ import { useUser } from '@/contexts/UserContext';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { profile, loading } = useUser();
+  const { profile, loading, questionsStats, credits } = useUser();
 
   return (
     <div className="space-y-6" data-testid="dashboard-container">
@@ -88,12 +88,16 @@ export default function Dashboard() {
           <CardContent className="flex-grow">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-indigo-200">Dostępne pytania:</span>
-                <span className="text-sm font-semibold">5</span>
+                <span className="text-sm text-indigo-200">Odpowiedziane pytania:</span>
+                <span className="text-sm font-semibold">{questionsStats.answeredQuestions} / {questionsStats.totalQuestions}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-indigo-200">Możliwe do zdobycia kredyty:</span>
-                <span className="text-sm font-semibold">25</span>
+                <span className="text-sm text-indigo-200">Zdobyte kredyty:</span>
+                <span className="text-sm font-semibold">{questionsStats.earnedCredits}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-indigo-200">Pozostałe do zdobycia:</span>
+                <span className="text-sm font-semibold">{questionsStats.remainingCredits}</span>
               </div>
               <div className="p-2 bg-indigo-800/30 rounded text-xs text-indigo-100 italic">
                 "Im więcej wiemy o Tobie, tym dokładniejsze są nasze przepowiednie."

@@ -11,11 +11,9 @@ import {
   CalendarIcon,
   Clock,
   MapPin,
-  Heart,
-  RefreshCw
+  Heart
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,7 +30,7 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, loading, updateProfile, refreshUserData } = useUser();
+  const { profile, loading, updateProfile, refreshUserData, getZodiacSignFromDate } = useUser();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -41,6 +39,7 @@ export default function ProfilePage() {
     birth_location: '',
     current_location: '',
     relationship_status: '',
+    zodiac_sign_id: '',
   });
   const [isSaving, setIsSaving] = useState(false);
   
@@ -58,6 +57,7 @@ export default function ProfilePage() {
         birth_location: profile.birth_location || '',
         current_location: profile.current_location || '',
         relationship_status: profile.relationship_status || '',
+        zodiac_sign_id: profile.zodiac_sign_id || '',
       });
       
       // Wymuszenie przeładowania komponentu Select
@@ -66,9 +66,24 @@ export default function ProfilePage() {
   }, [profile]);
 
   // Obsługa zmiany pól formularza
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Automatyczne określanie znaku zodiaku na podstawie daty urodzenia
+    if (name === 'birth_date' && value) {
+      try {
+        const zodiacSignId = await getZodiacSignFromDate(value);
+        if (zodiacSignId) {
+          setFormData(prev => ({ ...prev, zodiac_sign_id: zodiacSignId }));
+          
+          // Informacja dla użytkownika, że znak zodiaku został automatycznie określony
+          toast.info('Znak zodiaku został automatycznie określony na podstawie daty urodzenia.');
+        }
+      } catch (error) {
+        console.error('Error determining zodiac sign:', error);
+      }
+    }
   };
 
   // Obsługa zmiany dla pola select
@@ -171,6 +186,11 @@ export default function ProfilePage() {
                       onChange={handleInputChange}
                       className="bg-indigo-950/50 border-indigo-300/30 text-white"
                     />
+                    {formData.zodiac_sign_id && (
+                      <p className="text-xs text-indigo-300 mt-1">
+                        Twój znak zodiaku zostanie określony automatycznie
+                      </p>
+                    )}
                   </div>
                   
                   {/* Godzina urodzenia */}
