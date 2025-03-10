@@ -26,10 +26,30 @@ export interface UserCredits {
   last_updated?: string;
 }
 
+// Interfejs dla pytań profilowych
+export interface ProfileQuestion {
+  id: string;
+  question: string;
+  credits_reward: number;
+  is_active: boolean;
+}
+
+// Interfejs dla odpowiedzi użytkownika
+export interface ProfileAnswer {
+  id: string;
+  user_id: string;
+  question_id: string;
+  answer: string | null;
+  answered_at: string;
+}
+
 // Prosty interfejs stanu ładowania
 interface LoadingState {
   initial: boolean;
   profile: boolean;
+  questions: boolean;
+  answers: boolean;
+  submitting: boolean;
 }
 
 // Definicja kontekstu użytkownika - z dodanymi kredytami
@@ -41,12 +61,19 @@ interface UserContextType {
   userInitials: string;
   credits: UserCredits | null;
   
+  // Pytania i odpowiedzi
+  profileQuestions: ProfileQuestion[];
+  profileAnswers: ProfileAnswer[];
+  
   // Stan ładowania
   loading: LoadingState;
   
   // Funkcje
   updateProfile: (newProfileData: Partial<UserProfile>) => Promise<void>;
   refreshUserData: () => Promise<void>;
+  submitProfileAnswer: (questionId: string, answer: string) => Promise<boolean>;
+  isQuestionAnswered: (questionId: string) => boolean;
+  getQuestionAnswer: (questionId: string) => string | null;
 }
 
 // Utworzenie kontekstu
@@ -59,7 +86,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Stan ładowania
   const [loading, setLoading] = useState<LoadingState>({
     initial: true,
-    profile: false
+    profile: false,
+    questions: false,
+    answers: false,
+    submitting: false
   });
   
   // Dane podstawowe
@@ -68,6 +98,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('Użytkownik');
   const [userInitials, setUserInitials] = useState('U');
   const [credits, setCredits] = useState<UserCredits | null>(null);
+  
+  // Pytania i odpowiedzi
+  const [profileQuestions, setProfileQuestions] = useState<ProfileQuestion[]>([]);
+  const [profileAnswers, setProfileAnswers] = useState<ProfileAnswer[]>([]);
 
   // Funkcja do pobierania danych użytkownika
   const fetchUserData = async () => {
@@ -127,11 +161,63 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (creditsData) {
         setCredits(creditsData);
       }
+      
+      // Pobranie pytań profilowych
+      await fetchProfileQuestions();
+      
+      // Pobranie odpowiedzi użytkownika
+      await fetchUserAnswers(userId);
+      
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Nie udało się pobrać danych użytkownika');
     } finally {
       setLoading(prev => ({ ...prev, initial: false }));
+    }
+  };
+  
+  // Pobranie pytań profilowych
+  const fetchProfileQuestions = async () => {
+    setLoading(prev => ({ ...prev, questions: true }));
+    try {
+      const { data, error } = await supabase
+        .from('profile_questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('id');
+        
+      if (error) throw error;
+      
+      if (data) {
+        setProfileQuestions(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile questions:', error);
+      toast.error('Nie udało się pobrać dodatkowych pytań');
+    } finally {
+      setLoading(prev => ({ ...prev, questions: false }));
+    }
+  };
+  
+  // Pobranie odpowiedzi użytkownika
+  const fetchUserAnswers = async (userId: string) => {
+    setLoading(prev => ({ ...prev, answers: true }));
+    try {
+      const { data, error } = await supabase
+        .from('profile_answers')
+        .select('*')
+        .eq('user_id', userId);
+        
+      if (error) throw error;
+      
+      if (data) {
+        setProfileAnswers(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user answers:', error);
+      toast.error('Nie udało się pobrać odpowiedzi na pytania');
+    } finally {
+      setLoading(prev => ({ ...prev, answers: false }));
     }
   };
 
@@ -181,6 +267,120 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setLoading(prev => ({ ...prev, profile: false }));
     }
   };
+  
+  // Sprawdzenie czy na pytanie już odpowiedziano
+  const isQuestionAnswered = (questionId: string): boolean => {
+    return profileAnswers.some(answer => answer.question_id === questionId);
+  };
+  
+  // Pobranie odpowiedzi na pytanie
+  const getQuestionAnswer = (questionId: string): string | null => {
+    const answer = profileAnswers.find(a => a.question_id === questionId);
+    return answer ? answer.answer : null;
+  };
+  
+  // Dodanie odpowiedzi na pytanie profilowe
+  const submitProfileAnswer = async (questionId: string, answer: string): Promise<boolean> => {
+    if (!profile?.id) {
+      toast.error('Brak ID profilu');
+      return false;
+    }
+    
+    if (!answer.trim()) {
+      toast.error('Odpowiedź nie może być pusta');
+      return false;
+    }
+    
+    setLoading(prev => ({ ...prev, submitting: true }));
+    
+    try {
+      // Sprawdzenie, czy pytanie istnieje
+      const question = profileQuestions.find(q => q.id === questionId);
+      if (!question) {
+        throw new Error('Pytanie nie istnieje');
+      }
+      
+      // Sprawdzenie, czy na pytanie już odpowiedziano
+      if (isQuestionAnswered(questionId)) {
+        // Aktualizacja istniejącej odpowiedzi
+        const existingAnswer = profileAnswers.find(a => a.question_id === questionId);
+        
+        if (existingAnswer) {
+          const { data, error } = await supabase
+            .from('profile_answers')
+            .update({ answer: answer.trim() })
+            .eq('id', existingAnswer.id)
+            .select()
+            .single();
+            
+          if (error) throw error;
+          
+          if (data) {
+            // Aktualizacja lokalnej tablicy odpowiedzi
+            setProfileAnswers(prev => 
+              prev.map(a => a.id === data.id ? data : a)
+            );
+            
+            toast.success('Odpowiedź została zaktualizowana');
+            return true;
+          }
+        }
+      } else {
+        // Dodanie nowej odpowiedzi
+        const { data, error } = await supabase
+          .from('profile_answers')
+          .insert({
+            user_id: profile.id,
+            question_id: questionId,
+            answer: answer.trim()
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        if (data) {
+          // Dodanie nowej odpowiedzi do lokalnej tablicy
+          setProfileAnswers(prev => [...prev, data]);
+          
+          // Odświeżenie kredytów (które zostały przyznane przez trigger)
+          await refreshCredits();
+          
+          toast.success('Dziękujemy za odpowiedź!');
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error submitting answer:', error);
+      toast.error('Nie udało się zapisać odpowiedzi');
+      return false;
+    } finally {
+      setLoading(prev => ({ ...prev, submitting: false }));
+    }
+  };
+  
+  // Odświeżenie kredytów użytkownika
+  const refreshCredits = async () => {
+    if (!profile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_credits')
+        .select('*')
+        .eq('user_id', profile.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data) {
+        setCredits(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing credits:', error);
+    }
+  };
 
   // Pobranie danych przy pierwszym renderowaniu
   useEffect(() => {
@@ -194,9 +394,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     userName,
     userInitials,
     credits,
+    profileQuestions,
+    profileAnswers,
     loading,
     updateProfile,
-    refreshUserData: fetchUserData
+    refreshUserData: fetchUserData,
+    submitProfileAnswer,
+    isQuestionAnswered,
+    getQuestionAnswer
   };
 
   return (

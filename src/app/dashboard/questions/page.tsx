@@ -1,171 +1,78 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Sparkles, ArrowLeft, Star, Award, CheckCircle2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Star, Award, ArrowRight, HelpCircle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
-
-// Define the question interface
-interface Question {
-  id: string;
-  question_text: string;
-  options: {
-    id: string;
-    text: string;
-    is_correct?: boolean;
-  }[];
-  credits_reward: number;
-  answered?: boolean;
-}
 
 export default function QuestionsPage() {
-  const supabase = createClient();
-  const { profile, credits, refreshUserData } = useUser();
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const { profileQuestions, profileAnswers, credits, loading, submitProfileAnswer, isQuestionAnswered, getQuestionAnswer } = useUser();
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingQuestions, setLoadingQuestions] = useState(true);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
-  const [earned, setEarned] = useState(0);
+  const [answerText, setAnswerText] = useState('');
+  const [textareaEmpty, setTextareaEmpty] = useState(true);
   const [showReward, setShowReward] = useState(false);
+  const [earnedCredits, setEarnedCredits] = useState(0);
 
-  // Fetch questions from the database
+  // Ustawienie tekstu odpowiedzi przy zmianie pytania
   useEffect(() => {
-    async function fetchQuestions() {
-      try {
-        // Get all questions
-        const { data, error } = await supabase
-          .from('additional_questions')
-          .select('*')
-          .order('created_at');
-
-        if (error) throw error;
-        
-        // Get user's answered questions
-        const { data: answeredData, error: answeredError } = await supabase
-          .from('user_answered_questions')
-          .select('question_id')
-          .eq('user_id', profile?.id || '');
-
-        if (answeredError) throw answeredError;
-        
-        // Mark questions as answered
-        const answeredSet = new Set((answeredData || []).map(item => item.question_id));
-        setAnsweredQuestions(answeredSet);
-        
-        // Process questions and their options
-        if (data) {
-          const processedQuestions = await Promise.all(data.map(async (q: any) => {
-            // Fetch options for each question
-            const { data: options } = await supabase
-              .from('question_options')
-              .select('*')
-              .eq('question_id', q.id);
-            
-            return {
-              id: q.id,
-              question_text: q.question_text,
-              credits_reward: q.credits_reward,
-              options: options || [],
-              answered: answeredSet.has(q.id)
-            };
-          }));
-          
-          setQuestions(processedQuestions);
-        }
-      } catch (error) {
-        console.error('Error fetching questions:', error);
-        toast.error('Nie udało się załadować pytań');
-      } finally {
-        setLoadingQuestions(false);
-      }
-    }
-    
-    if (profile?.id) {
-      fetchQuestions();
-    }
-  }, [supabase, profile?.id]);
-
-  // Handle submitting an answer
-  const handleSubmitAnswer = async () => {
-    if (!selectedOption || !profile?.id) return;
-    
-    setIsSubmitting(true);
-    const currentQuestion = questions[currentQuestionIndex];
-    
-    try {
-      // Check if the answer is correct
-      const selectedOptionObj = currentQuestion.options.find(opt => opt.id === selectedOption);
+    if (profileQuestions.length > 0) {
+      const currentQuestion = profileQuestions[currentQuestionIndex];
+      const savedAnswer = getQuestionAnswer(currentQuestion.id);
       
-      if (selectedOptionObj?.is_correct) {
-        // Save the answered question
-        await supabase.from('user_answered_questions').insert({
-          user_id: profile.id,
-          question_id: currentQuestion.id,
-          selected_option_id: selectedOption,
-          is_correct: true
-        });
-        
-        // Update user credits
-        await supabase.rpc('add_user_credits', {
-          user_id_param: profile.id,
-          amount_param: currentQuestion.credits_reward
-        });
-        
-        // Show reward animation
-        setEarned(currentQuestion.credits_reward);
-        setShowReward(true);
-        
-        // Refresh user data to get updated credits
-        await refreshUserData();
-        
-        setTimeout(() => {
-          setShowReward(false);
-          // Mark question as answered
-          setAnsweredQuestions(prev => new Set(prev).add(currentQuestion.id));
-          // Move to next question if available
-          if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-          }
-          setSelectedOption(null);
-        }, 2000);
+      if (savedAnswer) {
+        setAnswerText(savedAnswer);
+        setTextareaEmpty(false);
       } else {
-        // Save the incorrect answer
-        await supabase.from('user_answered_questions').insert({
-          user_id: profile.id,
-          question_id: currentQuestion.id,
-          selected_option_id: selectedOption,
-          is_correct: false
-        });
-        
-        toast.error('Nieprawidłowa odpowiedź. Spróbuj ponownie!');
+        setAnswerText('');
+        setTextareaEmpty(true);
       }
-    } catch (error) {
-      console.error('Error submitting answer:', error);
-      toast.error('Nie udało się zapisać odpowiedzi');
-    } finally {
-      setIsSubmitting(false);
+    }
+  }, [currentQuestionIndex, profileQuestions, getQuestionAnswer]);
+
+  // Obsługa zapisywania odpowiedzi
+  const handleSubmitAnswer = async () => {
+    if (loading.submitting || textareaEmpty || profileQuestions.length === 0) return;
+    
+    const currentQuestion = profileQuestions[currentQuestionIndex];
+    const wasAnsweredBefore = isQuestionAnswered(currentQuestion.id);
+    
+    const success = await submitProfileAnswer(currentQuestion.id, answerText);
+    
+    if (success && !wasAnsweredBefore) {
+      // Pokaż animację nagrody tylko dla nowych odpowiedzi
+      setEarnedCredits(currentQuestion.credits_reward);
+      setShowReward(true);
+      
+      setTimeout(() => {
+        setShowReward(false);
+        
+        // Przejdź do następnego pytania, jeśli dostępne
+        if (currentQuestionIndex < profileQuestions.length - 1) {
+          setCurrentQuestionIndex(currentQuestionIndex + 1);
+        }
+      }, 2000);
     }
   };
   
-  // Calculate completion percentage
-  const completionPercentage = questions.length > 0
-    ? (answeredQuestions.size / questions.length) * 100
+  // Obliczenie procentu ukończenia
+  const answeredCount = profileQuestions.length > 0 
+    ? profileQuestions.filter(q => isQuestionAnswered(q.id)).length 
+    : 0;
+    
+  const completionPercentage = profileQuestions.length > 0
+    ? (answeredCount / profileQuestions.length) * 100
     : 0;
 
-  // Get current question
-  const currentQuestion = questions[currentQuestionIndex];
+  // Pobierz bieżące pytanie
+  const currentQuestion = profileQuestions[currentQuestionIndex];
   const isCurrentQuestionAnswered = currentQuestion 
-    ? answeredQuestions.has(currentQuestion.id)
+    ? isQuestionAnswered(currentQuestion.id)
     : false;
 
   return (
@@ -193,7 +100,7 @@ export default function QuestionsPage() {
           Pytania Dodatkowe
         </h1>
         <p className="text-indigo-200 mt-2" data-testid="questions-subheading">
-          Odpowiadaj na pytania i zdobywaj kredyty na ekskluzywne przepowiednie
+          Odpowiadaj na pytania, aby lepiej poznać twoją osobowość i zdobyć dodatkowe kredyty
         </p>
       </div>
       
@@ -204,7 +111,7 @@ export default function QuestionsPage() {
             <div className="flex justify-between items-center">
               <span className="text-indigo-200">Postęp odpowiedzi</span>
               <span className="text-indigo-100 font-medium">
-                {answeredQuestions.size} / {questions.length}
+                {answeredCount} / {profileQuestions.length}
               </span>
             </div>
             <Progress 
@@ -214,7 +121,7 @@ export default function QuestionsPage() {
             <p className="text-indigo-300 text-sm italic">
               {completionPercentage === 100 
                 ? "Wszystkie pytania zostały ukończone! Wróć później po więcej." 
-                : "Odpowiedz na wszystkie pytania, aby zdobyć maksymalną liczbę kredytów."}
+                : "Każda odpowiedź przybliża nas do stworzenia jeszcze lepszej przepowiedni dla Ciebie."}
             </p>
           </div>
         </CardContent>
@@ -222,7 +129,7 @@ export default function QuestionsPage() {
       
       {/* Questions area */}
       <AnimatePresence mode="wait">
-        {loadingQuestions ? (
+        {loading.initial || loading.questions ? (
           <motion.div
             key="loading"
             initial={{ opacity: 0 }}
@@ -232,7 +139,7 @@ export default function QuestionsPage() {
           >
             <div className="loader"></div>
           </motion.div>
-        ) : questions.length === 0 ? (
+        ) : profileQuestions.length === 0 ? (
           <motion.div
             key="no-questions"
             initial={{ opacity: 0, y: 20 }}
@@ -259,7 +166,7 @@ export default function QuestionsPage() {
                 <div className="flex justify-between items-center mb-2">
                   <CardTitle className="text-xl">Pytanie {currentQuestionIndex + 1}</CardTitle>
                   <div className="flex items-center">
-                    <Sparkles className="h-4 w-4 text-yellow-300 mr-1" />
+                    <Star className="h-4 w-4 text-yellow-300 mr-1" />
                     <span className="text-yellow-200 text-sm">
                       +{currentQuestion?.credits_reward || 0} kredytów
                     </span>
@@ -267,43 +174,42 @@ export default function QuestionsPage() {
                 </div>
                 <CardDescription className="text-indigo-200/70">
                   {isCurrentQuestionAnswered 
-                    ? "To pytanie zostało już przez Ciebie rozwiązane"
-                    : "Wybierz prawidłową odpowiedź, aby otrzymać kredyty"}
+                    ? "To pytanie zostało już przez Ciebie odpowiedziane"
+                    : "Podziel się swoją odpowiedzią, aby otrzymać kredyty"}
                 </CardDescription>
               </CardHeader>
               
               <CardContent>
                 <div className="space-y-6">
                   <div className="text-lg text-white font-medium">
-                    {currentQuestion?.question_text}
+                    {currentQuestion?.question}
                   </div>
                   
-                  <RadioGroup
-                    value={selectedOption || ""}
-                    onValueChange={setSelectedOption}
-                    disabled={isCurrentQuestionAnswered}
-                    className="space-y-3"
-                  >
-                    {currentQuestion?.options?.map((option) => (
-                      <div key={option.id} className="flex items-center">
-                        <div className="w-full bg-indigo-800/30 rounded-lg hover:bg-indigo-800/50 transition-colors">
-                          <div className="flex items-center space-x-2 p-3">
-                            <RadioGroupItem 
-                              value={option.id} 
-                              id={option.id} 
-                              className="text-indigo-200"
-                            />
-                            <Label 
-                              htmlFor={option.id} 
-                              className="text-indigo-100 flex-grow cursor-pointer"
-                            >
-                              {option.text}
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                  <div className="mt-4">
+                    <Textarea
+                      value={answerText}
+                      onChange={(e) => {
+                        setAnswerText(e.target.value);
+                        setTextareaEmpty(e.target.value.trim() === '');
+                      }}
+                      placeholder="Wpisz swoją odpowiedź tutaj..."
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
+                      disabled={loading.submitting}
+                    />
+                    
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ 
+                        opacity: textareaEmpty ? 1 : 0,
+                        height: textareaEmpty ? 'auto' : 0
+                      }}
+                      className="mt-2 overflow-hidden"
+                    >
+                      <p className="text-amber-300/80 text-sm">
+                        Twoja odpowiedź pomoże nam lepiej dopasować horoskop do Twojej osobowości.
+                      </p>
+                    </motion.div>
+                  </div>
                 </div>
               </CardContent>
               
@@ -315,42 +221,41 @@ export default function QuestionsPage() {
                     onClick={() => {
                       if (currentQuestionIndex > 0) {
                         setCurrentQuestionIndex(currentQuestionIndex - 1);
-                        setSelectedOption(null);
                       }
                     }}
-                    disabled={currentQuestionIndex === 0 || isSubmitting}
+                    disabled={currentQuestionIndex === 0 || loading.submitting}
                   >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
                     Poprzednie
                   </Button>
                   
-                  {isCurrentQuestionAnswered ? (
-                    <Button
-                      variant="outline"
-                      className="bg-emerald-900/40 text-emerald-100 border-emerald-500/30"
-                      onClick={() => {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setCurrentQuestionIndex(currentQuestionIndex + 1);
-                          setSelectedOption(null);
-                        }
-                      }}
-                      disabled={currentQuestionIndex === questions.length - 1}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Następne pytanie
-                    </Button>
-                  ) : (
+                  <div className="flex gap-2">
+                    {currentQuestionIndex < profileQuestions.length - 1 && (
+                      <Button
+                        variant="outline"
+                        className="text-indigo-200 border-indigo-300/30"
+                        onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                        disabled={loading.submitting}
+                      >
+                        Następne
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    )}
+                    
                     <Button
                       onClick={handleSubmitAnswer}
-                      disabled={!selectedOption || isSubmitting}
+                      disabled={textareaEmpty || loading.submitting || isCurrentQuestionAnswered}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
-                      {isSubmitting ? (
+                      {loading.submitting ? (
                         <>Zapisywanie</>
+                      ) : isCurrentQuestionAnswered ? (
+                        <>Odpowiedziano</>
                       ) : (
-                        <>Zatwierdź odpowiedź</>
+                        <>Zapisz odpowiedź</>
                       )}
                     </Button>
-                  )}
+                  </div>
                 </div>
               </CardFooter>
             </Card>
@@ -359,22 +264,22 @@ export default function QuestionsPage() {
       </AnimatePresence>
       
       {/* Navigation dots */}
-      {questions.length > 0 && (
+      {profileQuestions.length > 0 && (
         <div className="flex justify-center mt-6 space-x-2">
-          {questions.map((_, idx) => (
+          {profileQuestions.map((_, idx) => (
             <button
               key={idx}
               onClick={() => {
                 setCurrentQuestionIndex(idx);
-                setSelectedOption(null);
               }}
               className={`w-3 h-3 rounded-full transition-all ${
                 idx === currentQuestionIndex
                   ? "bg-indigo-400 scale-125"
-                  : answeredQuestions.has(questions[idx]?.id || '')
+                  : isQuestionAnswered(profileQuestions[idx].id)
                   ? "bg-indigo-600"
                   : "bg-indigo-900"
               }`}
+              aria-label={`Przejdź do pytania ${idx + 1}`}
             />
           ))}
         </div>
@@ -384,14 +289,20 @@ export default function QuestionsPage() {
       <AnimatePresence>
         {showReward && (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1.2, opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center z-50 bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm"
           >
             <motion.div
               className="bg-indigo-900/80 backdrop-blur-md border border-indigo-400/40 rounded-xl p-8 text-center shadow-xl"
-              animate={{ y: [0, -10, 0], transition: { repeat: 3, duration: 0.5 } }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1,
+                y: [0, -10, 0],
+              }}
+              transition={{ y: { repeat: 3, duration: 0.5 } }}
             >
               <motion.div
                 animate={{ rotate: 360 }}
@@ -400,10 +311,10 @@ export default function QuestionsPage() {
               >
                 <Award className="h-12 w-12 text-yellow-300" />
               </motion.div>
-              <h2 className="text-2xl font-bold text-white mb-2">Brawo!</h2>
-              <p className="text-indigo-200 mb-4">Poprawna odpowiedź!</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Dziękujemy!</h2>
+              <p className="text-indigo-200 mb-4">Twoja odpowiedź została zapisana</p>
               <div className="text-yellow-300 text-3xl font-bold flex items-center justify-center">
-                +{earned} <Star className="h-5 w-5 ml-2" />
+                +{earnedCredits} <Star className="h-5 w-5 ml-2" />
               </div>
             </motion.div>
           </motion.div>
