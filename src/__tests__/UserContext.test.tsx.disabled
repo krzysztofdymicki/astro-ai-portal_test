@@ -1,0 +1,445 @@
+import React from 'react';
+import { render, act, waitFor } from '@testing-library/react';
+import { UserProvider, useUser } from '@/contexts/UserContext';
+import * as supabaseClient from '@/utils/supabase/client';
+import { toast } from 'sonner';
+
+// src/contexts/UserContext.test.tsx
+
+
+// Mocking dependencies
+jest.mock('sonner', () => ({
+    toast: {
+        success: jest.fn(),
+        error: jest.fn(),
+    },
+}));
+
+jest.mock('@/utils/supabase/client', () => ({
+    createClient: jest.fn(),
+}));
+
+// Mock user data
+const mockUser = {
+    id: 'test-user-id',
+    email: 'test@example.com',
+};
+
+const mockProfile = {
+    id: 'test-user-id',
+    first_name: 'John',
+    last_name: 'Doe',
+    birth_date: '1990-01-01',
+    birth_time: '12:00',
+    birth_location: 'New York',
+    current_location: 'Warsaw',
+    relationship_status: 'single',
+    zodiac_sign_id: 'aries',
+    profile_completion_percentage: 80,
+    created_at: '2023-01-01',
+    updated_at: '2023-01-01',
+};
+
+const mockCredits = {
+    balance: 100,
+    last_updated: '2023-01-01',
+};
+
+// Mock Supabase client
+const mockSupabaseClient = {
+    auth: {
+        getUser: jest.fn(),
+    },
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn(),
+    update: jest.fn().mockReturnThis(),
+};
+
+// Test component that consumes the context
+function TestConsumer({ onContextValue }: { onContextValue: (context: any) => void }) {
+    const context = useUser();
+    React.useEffect(() => {
+        onContextValue(context);
+    }, [onContextValue, context]);
+
+    return <div data-testid="consumer">Consumer Component</div>;
+}
+
+describe('UserContext', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        
+        // Setup default mocks
+        (supabaseClient.createClient as jest.Mock).mockReturnValue(mockSupabaseClient);
+        
+        // Mock successful auth response
+        mockSupabaseClient.auth.getUser.mockResolvedValue({
+            data: { user: mockUser },
+            error: null,
+        });
+        
+        // Mock successful profile fetch
+        mockSupabaseClient.from.mockImplementation((table) => {
+            if (table === 'profiles') {
+                mockSupabaseClient.single.mockResolvedValue({
+                    data: mockProfile,
+                    error: null,
+                });
+            } else if (table === 'user_credits') {
+                mockSupabaseClient.single.mockResolvedValue({
+                    data: mockCredits,
+                    error: null,
+                });
+            }
+            return mockSupabaseClient;
+        });
+    });
+
+    test('throws error when useUser is used outside of UserProvider', () => {
+        // Silence the expected error
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        
+        expect(() => {
+            render(<TestConsumer onContextValue={() => {}} />);
+        }).toThrow('useUser must be used within a UserProvider');
+        
+        consoleError.mockRestore();
+    });
+
+    test('initializes with default values and fetches user data', async () => {
+        const contextValueCallback = jest.fn();
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={contextValueCallback} />
+                </UserProvider>
+            );
+        });
+        
+        // Initial loading state
+        expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+            loading: expect.objectContaining({ initial: true }),
+            userName: 'Użytkownik',
+            userInitials: 'U',
+        }));
+        
+        // After data loads
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                profile: mockProfile,
+                userEmail: 'test@example.com',
+                userName: 'John',
+                userInitials: 'JD',
+                credits: mockCredits,
+                loading: expect.objectContaining({ initial: false }),
+            }));
+        });
+        
+        // Verify Supabase calls
+        expect(mockSupabaseClient.auth.getUser).toHaveBeenCalled();
+        expect(mockSupabaseClient.from).toHaveBeenCalledWith('profiles');
+        expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_credits');
+    });
+
+    test('handles fetch user data errors', async () => {
+        // Mock auth error
+        mockSupabaseClient.auth.getUser.mockResolvedValue({
+            data: { user: null },
+            error: new Error('Auth error'),
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <div>Test Component</div>
+                </UserProvider>
+            );
+        });
+        
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Nie udało się pobrać danych użytkownika');
+        });
+    });
+
+    test('handles missing user data', async () => {
+        // Mock no user returned
+        mockSupabaseClient.auth.getUser.mockResolvedValue({
+            data: { user: null },
+            error: null,
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <div>Test Component</div>
+                </UserProvider>
+            );
+        });
+        
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Nie udało się pobrać danych użytkownika');
+        });
+    });
+
+    test('successfully updates user profile', async () => {
+        const contextValueCallback = jest.fn();
+        const updatedProfile = { ...mockProfile, first_name: 'Jane', last_name: 'Smith' };
+        
+        // Użyj flagi, aby śledzić czy zaobserwowano stan ładowania
+        let loadingProfileObserved = false;
+        
+        // Mock successful profile update with delay to ensure loading state is captured
+        mockSupabaseClient.update.mockReturnThis();
+        mockSupabaseClient.single.mockImplementation(() => {
+            return new Promise(resolve => {
+                // Zwiększ opóźnienie, aby zapewnić więcej czasu na przechwycenie stanu ładowania
+                setTimeout(() => {
+                    resolve({
+                        data: updatedProfile,
+                        error: null
+                    });
+                }, 100);
+            });
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={(context) => {
+                        // Dodaj specjalny handler, który przechwyci loading.profile=true
+                        if (context.loading && context.loading.profile === true) {
+                            loadingProfileObserved = true;
+                        }
+                        contextValueCallback(context);
+                    }} />
+                </UserProvider>
+            );
+        });
+        
+        // Wait for initial data to load
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                profile: mockProfile,
+            }));
+        });
+        
+        // Get the context value with the updateProfile function
+        const context = contextValueCallback.mock.calls[contextValueCallback.mock.calls.length - 1][0];
+        
+        // Call updateProfile
+        await act(async () => {
+            await context.updateProfile({ first_name: 'Jane', last_name: 'Smith' });
+        });
+        
+        // Sprawdź flagę zamiast przeszukiwania historii wywołań
+        expect(loadingProfileObserved).toBe(true);
+        
+        // Check if profile was updated
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                profile: updatedProfile,
+                userName: 'Jane',
+                userInitials: 'JS',
+                loading: expect.objectContaining({ profile: false }),
+            }));
+        });
+        
+        // Verify toast success message
+        expect(toast.success).toHaveBeenCalledWith('Profil został zaktualizowany');
+    });
+
+    test('handles profile update errors', async () => {
+        const contextValueCallback = jest.fn();
+        const updateError = new Error('Update failed');
+        
+        // Mock profile update error
+        mockSupabaseClient.update.mockReturnThis();
+        mockSupabaseClient.single.mockImplementation(() => {
+            // First return success for initial load, then error for update
+            if (mockSupabaseClient.single.mock.calls.length === 1) {
+                return Promise.resolve({ data: mockProfile, error: null });
+            } else {
+                return Promise.resolve({ data: null, error: updateError });
+            }
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={contextValueCallback} />
+                </UserProvider>
+            );
+        });
+        
+        // Wait for initial data to load
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                profile: mockProfile,
+            }));
+        });
+        
+        const context = contextValueCallback.mock.calls[contextValueCallback.mock.calls.length - 1][0];
+        
+        // Call updateProfile without expecting it to throw
+        await context.updateProfile({ first_name: 'Jane' });
+        
+        // Verify error toast was shown
+        expect(toast.error).toHaveBeenCalledWith('Nie udało się zaktualizować profilu');
+   });
+
+    test('handles missing profile ID during update', async () => {
+        const contextValueCallback = jest.fn();
+        
+        // Mock profile with null data
+        mockSupabaseClient.single.mockResolvedValue({
+            data: null,
+            error: null
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={contextValueCallback} />
+                </UserProvider>
+            );
+        });
+        
+        // Get context after loading
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalled();
+        });
+        
+        const context = contextValueCallback.mock.calls[contextValueCallback.mock.calls.length - 1][0];
+        
+        // Call updateProfile and expect it to show an error toast
+        await act(async () => {
+            await context.updateProfile({ first_name: 'Jane' });
+        });
+        
+        expect(toast.error).toHaveBeenCalledWith('Nie udało się zaktualizować profilu');
+    });
+
+    test('calculates user initials with first name only', async () => {
+        const profileWithFirstNameOnly = { ...mockProfile, first_name: 'John', last_name: null };
+        
+        mockSupabaseClient.single.mockImplementation(() => {
+            return Promise.resolve({ data: profileWithFirstNameOnly, error: null });
+        });
+        
+        const contextValueCallback = jest.fn();
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={contextValueCallback} />
+                </UserProvider>
+            );
+        });
+        
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                userName: 'John',
+                userInitials: 'J',
+            }));
+        });
+    });
+
+    test('refreshUserData function refreshes user data', async () => {
+        const contextValueCallback = jest.fn();
+        const updatedCredits = { ...mockCredits, balance: 200 };
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <TestConsumer onContextValue={contextValueCallback} />
+                </UserProvider>
+            );
+        });
+        
+        // Wait for initial data to load
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                credits: mockCredits,
+            }));
+        });
+        
+        // Update the mock to return new data on the next call
+        mockSupabaseClient.single.mockImplementation(() => {
+            if (mockSupabaseClient.from.mock.calls.length <= 3) { // Initial calls
+                return Promise.resolve({
+                    data: mockSupabaseClient.from.mock.calls[mockSupabaseClient.from.mock.calls.length - 1][0] === 'user_credits' 
+                        ? mockCredits 
+                        : mockProfile,
+                    error: null
+                });
+            } else { // Refresh calls
+                return Promise.resolve({
+                    data: mockSupabaseClient.from.mock.calls[mockSupabaseClient.from.mock.calls.length - 1][0] === 'user_credits' 
+                        ? updatedCredits 
+                        : mockProfile,
+                    error: null
+                });
+            }
+        });
+        
+        const context = contextValueCallback.mock.calls[contextValueCallback.mock.calls.length - 1][0];
+        
+        // Call refreshUserData
+        await act(async () => {
+            await context.refreshUserData();
+        });
+        
+        // Verify loading state during refresh
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                loading: expect.objectContaining({ initial: true }),
+            }));
+        });
+        
+        // Check if data was refreshed
+        await waitFor(() => {
+            expect(contextValueCallback).toHaveBeenCalledWith(expect.objectContaining({
+                credits: updatedCredits,
+                loading: expect.objectContaining({ initial: false }),
+            }));
+        });
+    });
+
+    test('handles profile data error during initial load', async () => {
+        // Mock auth success but profile error
+        mockSupabaseClient.auth.getUser.mockResolvedValue({
+            data: { user: mockUser },
+            error: null,
+        });
+        
+        mockSupabaseClient.from.mockImplementation((table) => {
+            if (table === 'profiles') {
+                mockSupabaseClient.single.mockResolvedValue({
+                    data: null,
+                    error: { message: 'Profile error', code: 'SOME_ERROR' },
+                });
+            } else {
+                mockSupabaseClient.single.mockResolvedValue({
+                    data: mockCredits,
+                    error: null,
+                });
+            }
+            return mockSupabaseClient;
+        });
+        
+        await act(async () => {
+            render(
+                <UserProvider>
+                    <div>Test Component</div>
+                </UserProvider>
+            );
+        });
+        
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Nie udało się pobrać danych użytkownika');
+        });
+    });
+});
