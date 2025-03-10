@@ -34,6 +34,7 @@ export default function QuestionsPage() {
   const [textareaEmpty, setTextareaEmpty] = useState(true);
   const [showReward, setShowReward] = useState(false);
   const [earnedCredits, setEarnedCredits] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Ustawienie tekstu odpowiedzi przy zmianie pytania
   useEffect(() => {
@@ -48,6 +49,9 @@ export default function QuestionsPage() {
         setAnswerText('');
         setTextareaEmpty(true);
       }
+      
+      // Reset stanu edycji przy zmianie pytania
+      setIsEditing(false);
     }
   }, [currentQuestionIndex, profileQuestions, getQuestionAnswer]);
 
@@ -234,17 +238,74 @@ export default function QuestionsPage() {
                     <div className="mt-4 p-4 bg-indigo-800/30 rounded-lg border border-indigo-500/30">
                       <div className="flex items-start gap-2">
                         <CheckCircle2 className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-indigo-100 font-medium mb-1">Twoja odpowiedź:</p>
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
-                            <p className="text-indigo-200 italic">
-                              {getQuestionAnswer(currentQuestion.id)}
-                            </p>
-                          </motion.div>
+                        <div className="w-full">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="text-indigo-100 font-medium">Twoja odpowiedź:</p>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-indigo-300 hover:text-indigo-100 py-1 px-2 h-auto"
+                              onClick={() => setIsEditing(true)}
+                            >
+                              Edytuj
+                            </Button>
+                          </div>
+                          
+                          {isEditing ? (
+                            <div className="mt-2">
+                              <Textarea
+                                value={answerText}
+                                onChange={(e) => {
+                                  setAnswerText(e.target.value);
+                                  setTextareaEmpty(e.target.value.trim() === '');
+                                }}
+                                placeholder="Edytuj swoją odpowiedź..."
+                                className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
+                                disabled={loading.submitting}
+                              />
+                              <div className="flex justify-end gap-2 mt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-indigo-300 border-indigo-300/30"
+                                  onClick={() => {
+                                    // Przywróć poprzednią odpowiedź i anuluj edycję
+                                    const savedAnswer = getQuestionAnswer(currentQuestion.id) || '';
+                                    setAnswerText(savedAnswer);
+                                    setIsEditing(false);
+                                  }}
+                                  disabled={loading.submitting}
+                                >
+                                  Anuluj
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                  onClick={async () => {
+                                    if (textareaEmpty) return;
+                                    
+                                    const success = await submitProfileAnswer(currentQuestion.id, answerText);
+                                    if (success) {
+                                      setIsEditing(false);
+                                    }
+                                  }}
+                                  disabled={textareaEmpty || loading.submitting}
+                                >
+                                  Zapisz zmiany
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.3 }}
+                            >
+                              <p className="text-indigo-200 italic">
+                                {getQuestionAnswer(currentQuestion.id)}
+                              </p>
+                            </motion.div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -86,7 +86,6 @@ interface UserContextType {
   submitProfileAnswer: (questionId: string, answer: string) => Promise<boolean>;
   isQuestionAnswered: (questionId: string) => boolean;
   getQuestionAnswer: (questionId: string) => string | null;
-  getZodiacSignFromDate: (birthDate: string) => Promise<string | null>;
 }
 
 // Utworzenie kontekstu
@@ -347,21 +346,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return answer ? answer.answer : null;
   };
   
-  // Funkcja do określania znaku zodiaku na podstawie daty urodzenia
-  const getZodiacSignFromDate = async (birthDate: string): Promise<string | null> => {
-    if (!birthDate) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .rpc('get_zodiac_sign_id', { birth_date: birthDate });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error getting zodiac sign:', error);
-      return null;
-    }
-  };
+  // Usunięto funkcję getZodiacSignFromDate, która została przeniesiona do zodiac-utils.ts
 
   // Dodanie odpowiedzi na pytanie profilowe
   const submitProfileAnswer = async (questionId: string, answer: string): Promise<boolean> => {
@@ -490,8 +475,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     refreshUserData: fetchUserData,
     submitProfileAnswer,
     isQuestionAnswered,
-    getQuestionAnswer,
-    getZodiacSignFromDate
+    getQuestionAnswer
   };
 
   return (

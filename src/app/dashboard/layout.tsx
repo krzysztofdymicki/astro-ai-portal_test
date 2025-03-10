@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserProvider, useUser } from '@/contexts/UserContext';
+import DebugContextPanel from '@/components/debug/DebugContextPanel';
 
 // DashboardHeader - komponent zawierający header z menu użytkownika
 function DashboardHeader() {
@@ -124,25 +125,35 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <div className="min-h-screen flex flex-col">
-        <DashboardHeader />
-        
-        <main className="flex-grow p-4 sm:p-6 bg-gradient-to-b from-indigo-950/20 to-indigo-900/10">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-
-        <footer className="relative z-10 mt-auto">
-          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,5,25,0.3)] to-[rgba(10,5,25,0.6)] backdrop-blur-[2px]"></div>
-          
-          <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <p className="text-center text-sm text-indigo-200/70 text-light">
-              &copy; {new Date().getFullYear()} Twoja Przepowiednia. Wszystkie prawa zastrzeżone.
-            </p>
-          </div>
-        </footer>
-      </div>
+      <DashboardContent>{children}</DashboardContent>
     </UserProvider>
+  );
+}
+
+// Komponent wewnętrzny, który będzie miał dostęp do UserProvider
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <DashboardHeader />
+      
+      <main className="flex-grow p-4 sm:p-6 bg-gradient-to-b from-indigo-950/20 to-indigo-900/10">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
+
+      <footer className="relative z-10 mt-auto">
+        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,5,25,0.3)] to-[rgba(10,5,25,0.6)] backdrop-blur-[2px]"></div>
+        
+        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-indigo-200/70 text-light">
+            &copy; {new Date().getFullYear()} Twoja Przepowiednia. Wszystkie prawa zastrzeżone.
+          </p>
+        </div>
+      </footer>
+      
+      {/* Panel debugowania kontekstu */}
+      <DebugContextPanel />
+    </div>
   );
 }
