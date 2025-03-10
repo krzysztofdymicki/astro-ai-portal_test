@@ -154,7 +154,7 @@ const onSubmit = async (values: ProfileFormValues) => {
           <ChevronLeft className="h-5 w-5" />
           <span className="sr-only">Powrót</span>
         </Link>
-        <h1 className="text-2xl font-bold text-white">Twój profil astralny</h1>
+        <h1 className="text-2xl font-bold text-white" data-testid="profile-title">Twój profil astralny</h1>
       </div>
 
       <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-glow">
@@ -166,13 +166,13 @@ const onSubmit = async (values: ProfileFormValues) => {
         </CardHeader>
         <CardContent>
           {(profileLoading) ? (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-8" data-testid="profile-loading-spinner">
               <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
             </div>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <fieldset disabled={loading} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="profile-form">
+                <fieldset disabled={loading} className="space-y-5" data-testid="profile-form-fields">
                   <div className="grid gap-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Imię */}
@@ -187,6 +187,7 @@ const onSubmit = async (values: ProfileFormValues) => {
                             </FormLabel>
                             <FormControl>
                               <Input 
+                                data-testid="first-name-input"
                                 placeholder="Wprowadź swoje imię" 
                                 className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`}
                                 {...field} 
@@ -210,6 +211,7 @@ const onSubmit = async (values: ProfileFormValues) => {
                             <FormLabel className="text-indigo-100">Nazwisko</FormLabel>
                             <FormControl>
                               <Input 
+                                data-testid="last-name-input"
                                 placeholder="Wprowadź swoje nazwisko" 
                                 className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`} 
                                 {...field} 
@@ -238,6 +240,7 @@ const onSubmit = async (values: ProfileFormValues) => {
                             </FormLabel>
                             <FormControl>
                               <Input 
+                                data-testid="birth-date-input"
                                 type="date" 
                                 className={`bg-indigo-950/50 border-indigo-300/30 text-white ${loading ? 'opacity-75' : ''}`} 
                                 {...field} 
@@ -387,11 +390,12 @@ const onSubmit = async (values: ProfileFormValues) => {
                   <Button 
                     type="submit" 
                     disabled={loading}
+                    data-testid="save-profile-button"
                     className={`bg-indigo-600 hover:bg-indigo-500 text-white border-none shadow-glow w-full sm:w-auto transition-all ${loading ? 'opacity-90 pointer-events-none' : ''}`}
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" data-testid="saving-spinner" />
                         Zapisywanie...
                       </>
                     ) : (
