@@ -15,7 +15,7 @@ import { useUser } from '@/contexts/UserContext';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { profile } = useUser();
+  const { profile, loading } = useUser();
 
   return (
     <div className="space-y-6" data-testid="dashboard-container">

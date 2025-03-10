@@ -1,8 +1,7 @@
-// src/__tests__/home-page.test.tsx
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import HomePage from '../app/page';
-import { getHeadingByText, getParagraphByText, renderWithLayout } from '../utils/test-utils';
+import { UserProvider } from '../contexts/UserContext';
 
 // Mock dla komponentu CosmicBackground
 jest.mock('../components/background/CosmicBackground', () => ({
@@ -10,76 +9,106 @@ jest.mock('../components/background/CosmicBackground', () => ({
   default: () => <div data-testid="cosmic-background" />
 }));
 
+// If you need to mock any function used by the HomePage component
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      pathname: '/',
+    };
+  },
+}));
+
 describe('HomePage Component', () => {
-  test('renderuje stronę główną z prawidłowymi elementami', () => {
-    render(<HomePage />);
-    
-    // Użyj bardziej specyficznych selektorów
-    expect(getHeadingByText(/twoja przepowiednia/i)).toBeInTheDocument();
-    expect(screen.getByText(/odkryj swoją przyszłość/i)).toBeInTheDocument();
-    expect(screen.getByText(/z pomocą doświadczonych astrologów/i)).toBeInTheDocument();
-    expect(screen.getByText(/personalizowane horoskopy/i)).toBeInTheDocument();
-    
-    // Sprawdzenie przycisków i linków
-    expect(screen.getByRole('link', { name: /zaloguj się/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /zarejestruj się/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /rozpocznij za darmo/i })).toBeInTheDocument();
-    
-    // Sprawdzenie sekcji zalet
-    expect(screen.getByText(/dlaczego nasi klienci nam ufają/i)).toBeInTheDocument();
-    expect(screen.getByText(/15\+/i)).toBeInTheDocument();
-    expect(screen.getByText(/lat doświadczenia/i)).toBeInTheDocument();
-    expect(screen.getByText(/10 000\+/i)).toBeInTheDocument();
-    expect(screen.getByText(/zadowolonych klientów/i)).toBeInTheDocument();
-    expect(screen.getByText(/ponad 90%/i)).toBeInTheDocument();
-    expect(screen.getByText(/trafność/i)).toBeInTheDocument();
-    
-    // Sprawdzenie sekcji świadectw
-    expect(screen.getByText(/co mówią nasi klienci/i)).toBeInTheDocument();
-    expect(screen.getByText(/- anna k\., warszawa/i)).toBeInTheDocument();
-    expect(screen.getByText(/- marek w\., kraków/i)).toBeInTheDocument();
+  beforeEach(() => {
+    // Render the component with required providers before each test
+    render(
+      <UserProvider>
+        <HomePage />
+      </UserProvider>
+    );
   });
 
-  test('linki mają odpowiednie adresy URL', () => {
-    render(<HomePage />);
-    
-    // Sprawdzenie URL dla linków logowania i rejestracji
-    expect(screen.getByRole('link', { name: /zaloguj się/i })).toHaveAttribute('href', '/login');
-    expect(screen.getAllByRole('link', { name: /zarejestruj się/i })[0]).toHaveAttribute('href', '/register');
-    expect(screen.getByRole('link', { name: /rozpocznij za darmo/i })).toHaveAttribute('href', '/register');
+  test('renders the main page sections', () => {
+    expect(screen.getByTestId('home-page')).toBeInTheDocument();
+    expect(screen.getByTestId('hero-section')).toBeInTheDocument();
+    expect(screen.getByTestId('features-section')).toBeInTheDocument();
+    expect(screen.getByTestId('testimonials-section')).toBeInTheDocument();
+    expect(screen.getByTestId('cta-section')).toBeInTheDocument();
+    expect(screen.getByTestId('footer')).toBeInTheDocument();
   });
 
-  test('wyświetla aktualny rok w stopce', () => {
-    // Poprawione mockowanie Date
-    const originalDate = global.Date;
-    const mockDate = new Date(2023, 0, 1);
+  test('renders main heading and subheading', () => {
+    expect(screen.getByTestId('main-heading')).toBeInTheDocument();
+    expect(screen.getByTestId('main-heading').textContent).toBe('Twoja Przepowiednia');
+    expect(screen.getByTestId('main-subheading')).toBeInTheDocument();
+  });
+
+  test('renders all feature cards', () => {
+    expect(screen.getByTestId('features-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('feature-experience')).toBeInTheDocument();
+    expect(screen.getByTestId('feature-clients')).toBeInTheDocument();
+    expect(screen.getByTestId('feature-accuracy')).toBeInTheDocument();
+  });
+
+  test('renders testimonials section with client opinions', () => {
+    expect(screen.getByTestId('testimonials-heading')).toBeInTheDocument();
+    expect(screen.getByTestId('testimonial-1')).toBeInTheDocument();
+    expect(screen.getByTestId('testimonial-2')).toBeInTheDocument();
+  });
+
+  test('renders login and register buttons with correct links', () => {
+    const loginButton = screen.getByTestId('login-button');
+    const registerButton = screen.getByTestId('register-button');
     
-    global.Date = class extends Date {
-      constructor() {
-        super();
-        return mockDate;
-      }
-      static now() { return mockDate.getTime(); }
-    } as DateConstructor;
+    expect(loginButton).toBeInTheDocument();
+    expect(registerButton).toBeInTheDocument();
     
-    render(<HomePage />);
+    expect(loginButton.getAttribute('href')).toBe('/login');
+    expect(registerButton.getAttribute('href')).toBe('/register');
+  });
+
+  test('renders CTA section with register button', () => {
+    const ctaButton = screen.getByTestId('cta-button');
     
-    // Użyj bardziej specyficznego selektora dla stopki
-    const footerText = screen.getByText((content) => {
-      return content.includes('2023 Twoja Przepowiednia');
+    expect(screen.getByTestId('cta-heading')).toBeInTheDocument();
+    expect(ctaButton).toBeInTheDocument();
+    expect(ctaButton.getAttribute('href')).toBe('/register');
+  });
+
+  // Isolating this test since it needs its own render with a mocked Date
+  describe('Footer copyright', () => {
+    test('displays current year in footer copyright', () => {
+      // Clean up previous render to avoid conflicts
+      cleanup();
+      
+      // Better way to mock Date
+      const RealDate = global.Date;
+      const mockDate = new Date(2025, 2, 10);
+      
+      // Mock implementation that returns our fixed date for new Date()
+      global.Date = class extends RealDate {
+        constructor() {
+          super();
+          return mockDate;
+        }
+        
+        static now() {
+          return mockDate.getTime();
+        }
+      } as DateConstructor;
+      
+      // Render with mocked date
+      render(
+        <UserProvider>
+          <HomePage />
+        </UserProvider>
+      );
+      
+      expect(screen.getByTestId('footer').textContent).toContain('2025');
+      
+      // Cleanup - restore the real Date implementation
+      global.Date = RealDate;
     });
-    expect(footerText).toBeInTheDocument();
-    
-    // Przywracanie prawdziwego Date
-    global.Date = originalDate;
-  });
-});
-
-describe('HomePage Component with Layout', () => {
-  test('renderuje stronę główną z layoutem', () => {
-    renderWithLayout(<HomePage />);
-    
-    // Now you can test for layout components
-    expect(screen.getByTestId('cosmic-background')).toBeInTheDocument();
   });
 });

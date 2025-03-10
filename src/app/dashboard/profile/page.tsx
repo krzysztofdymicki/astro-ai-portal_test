@@ -43,7 +43,6 @@ export default function ProfilePage() {
     relationship_status: '',
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   
   // Dodajemy key do wymuszenia pełnego przeładowania komponentu
   const [selectKey, setSelectKey] = useState(Date.now());
@@ -51,7 +50,7 @@ export default function ProfilePage() {
   // Aktualizuj formularz gdy dane profilu się zmienią
   useEffect(() => {
     if (profile) {
-      const newFormData = {
+      setFormData({
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         birth_date: profile.birth_date || '',
@@ -59,9 +58,7 @@ export default function ProfilePage() {
         birth_location: profile.birth_location || '',
         current_location: profile.current_location || '',
         relationship_status: profile.relationship_status || '',
-      };
-      
-      setFormData(newFormData);
+      });
       
       // Wymuszenie przeładowania komponentu Select
       setSelectKey(Date.now());
@@ -76,7 +73,6 @@ export default function ProfilePage() {
 
   // Obsługa zmiany dla pola select
   const handleSelectChange = (name: string, value: string) => {
-    console.log(`Zmiana statusu związku: ${name} = ${value}`);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -89,13 +85,10 @@ export default function ProfilePage() {
       return;
     }
     
-    // Logujemy wartość przed zapisem
-    console.log('Zapisywanie statusu związku:', formData.relationship_status);
-    
     setIsSaving(true);
     try {
       await updateProfile(formData);
-      //toast.success('Profil został zaktualizowany');
+      toast.success('Profil został zaktualizowany');
       
       // Odświeżamy komponent Select po zapisie
       setSelectKey(Date.now());
@@ -107,19 +100,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Odświeżanie danych profilu
-  const handleRefresh = async () => {
-    try {
-      await refreshUserData();
-      toast.success('Dane zostały odświeżone');
-      
-      // Odświeżamy komponent Select po refreshu danych
-      setSelectKey(Date.now());
-    } catch (error) {
-      toast.error('Nie udało się odświeżyć danych');
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center mb-4">
@@ -128,16 +108,6 @@ export default function ProfilePage() {
           <span className="sr-only">Powrót</span>
         </Link>
         <h1 className="text-2xl font-bold text-white" data-testid="profile-title">Twój profil astralny</h1>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="ml-auto"
-          onClick={handleRefresh}
-          disabled={loading.initial}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading.initial ? 'animate-spin' : ''}`} />
-          <span className="sr-only">Odśwież dane</span>
-        </Button>
       </div>
 
       <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-glow">
@@ -283,32 +253,6 @@ export default function ProfilePage() {
                   </Select>
                 </div>
               </div>
-              
-              {/* Pokaż/ukryj aktualny stan */}
-              <div className="flex justify-end">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  className="text-indigo-300 hover:text-indigo-200"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                >
-                  {showAdvanced ? 'Ukryj szczegóły techniczne' : 'Pokaż szczegóły techniczne'}
-                </Button>
-              </div>
-              
-              {/* Zaawansowane informacje (aktualny stan) */}
-              {showAdvanced && (
-                <div className="bg-indigo-900/60 rounded p-4 border border-indigo-300/30 text-white text-sm">
-                  <h3 className="font-semibold mb-2">Aktualny stan kontekstu (profile):</h3>
-                  <pre className="overflow-auto max-h-48 text-xs">
-                    {JSON.stringify(profile, null, 2)}
-                  </pre>
-                  <h3 className="font-semibold mb-2 mt-4">Aktualny stan formularza:</h3>
-                  <pre className="overflow-auto max-h-48 text-xs">
-                    {JSON.stringify(formData, null, 2)}
-                  </pre>
-                </div>
-              )}
               
               <div className="bg-indigo-800/30 p-4 rounded-lg border border-indigo-300/20">
                 <p className="text-indigo-100 text-sm">
