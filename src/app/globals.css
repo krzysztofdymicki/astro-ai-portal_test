@@ -451,5 +451,56 @@
   animation: glow 4s ease-in-out infinite;
 }
 
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--color-primary);
+  }
+  50% {
+    text-shadow: 0 0 20px var(--color-primary-light);
+  }
+}
+
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
+}
+
+/* Efekt lśnienia tekstu - używany na nagłówkach */
+.mystical-glow {
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+/* Loader animacja */
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(139, 92, 246, 0.3);
+  border-bottom-color: rgba(139, 92, 246, 0.8);
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animacja pulsowania */
+@keyframes pulse-mystical {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.pulse-mystical {
+  animation: pulse-mystical 2s ease-in-out infinite;
+}
+
 
 
