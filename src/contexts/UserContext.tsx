@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 
-// Definiowanie interfejsów
+// Definicja interfejsu profilu
 export interface UserProfile {
   id: string;
   first_name: string | null;
@@ -20,119 +20,165 @@ export interface UserProfile {
   updated_at: string;
 }
 
+// Dodajemy interfejs dla kredytów
 export interface UserCredits {
   balance: number;
+  last_updated?: string;
 }
 
+// Prosty interfejs stanu ładowania
+interface LoadingState {
+  initial: boolean;
+  profile: boolean;
+}
+
+// Definicja kontekstu użytkownika - z dodanymi kredytami
 interface UserContextType {
-  loading: boolean;
+  // Dane użytkownika
   profile: UserProfile | null;
-  credits: UserCredits | null;
+  userEmail: string;
   userName: string;
   userInitials: string;
-  userEmail: string;
+  credits: UserCredits | null;
+  
+  // Stan ładowania
+  loading: LoadingState;
+  
+  // Funkcje
   updateProfile: (newProfileData: Partial<UserProfile>) => Promise<void>;
   refreshUserData: () => Promise<void>;
 }
 
+// Utworzenie kontekstu
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Provider kontekstu
 export function UserProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
-  const [loading, setLoading] = useState(true);
+  
+  // Stan ładowania
+  const [loading, setLoading] = useState<LoadingState>({
+    initial: true,
+    profile: false
+  });
+  
+  // Dane podstawowe
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [credits, setCredits] = useState<UserCredits | null>(null);
+  const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('Użytkownik');
   const [userInitials, setUserInitials] = useState('U');
-  const [userEmail, setUserEmail] = useState('');
+  const [credits, setCredits] = useState<UserCredits | null>(null);
 
   // Funkcja do pobierania danych użytkownika
   const fetchUserData = async () => {
-    setLoading(true);
+    setLoading(prev => ({ ...prev, initial: true }));
     try {
-      // Pobranie danych użytkownika
+      // Pobranie danych użytkownika z auth
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
         throw userError;
       }
       
-      if (userData?.user) {
-        setUserEmail(userData.user.email || '');
+      if (!userData?.user) {
+        throw new Error('Brak zalogowanego użytkownika');
+      }
+      
+      const userId = userData.user.id;
+      setUserEmail(userData.user.email || '');
+      
+      // Pobranie profilu użytkownika
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
         
-        // Pobranie profilu użytkownika
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userData.user.id)
-          .single();
-          
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+      
+      if (profileData) {
+        setProfile(profileData);
         
-        if (profileData) {
-          setProfile(profileData);
+        // Aktualizacja pochodnych danych
+        if (profileData.first_name) {
+          setUserName(profileData.first_name);
           
-          // Ustawienie imienia i inicjałów użytkownika
-          if (profileData.first_name) {
-            setUserName(profileData.first_name);
-            
-            let initials = profileData.first_name.charAt(0).toUpperCase();
-            if (profileData.last_name) {
-              initials += profileData.last_name.charAt(0).toUpperCase();
-            }
-            setUserInitials(initials);
+          let initials = profileData.first_name.charAt(0).toUpperCase();
+          if (profileData.last_name) {
+            initials += profileData.last_name.charAt(0).toUpperCase();
           }
+          setUserInitials(initials);
         }
+      }
+
+      // Pobranie kredytów użytkownika
+      const { data: creditsData, error: creditsError } = await supabase
+        .from('user_credits')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
         
-        // Pobranie kredytów użytkownika
-        const { data: creditsData, error: creditsError } = await supabase
-          .from('user_credits')
-          .select('balance')
-          .eq('user_id', userData.user.id)
-          .single();
-          
-        if (creditsError && creditsError.code !== 'PGRST116') {
-          throw creditsError;
-        }
-        
-        if (creditsData) {
-          setCredits(creditsData);
-        }
+      if (creditsError && creditsError.code !== 'PGRST116') {
+        throw creditsError;
+      }
+      
+      if (creditsData) {
+        setCredits(creditsData);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Nie udało się pobrać danych użytkownika');
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, initial: false }));
     }
   };
 
-  // Funkcja do aktualizacji profilu użytkownika
+  // Funkcja do aktualizacji profilu
   const updateProfile = async (newProfileData: Partial<UserProfile>) => {
     try {
       if (!profile?.id) {
         throw new Error('Brak ID profilu');
       }
       
-      const { error } = await supabase
+      setLoading(prev => ({ ...prev, profile: true }));
+      
+      // Aktualizacja danych w bazie
+      const { data, error } = await supabase
         .from('profiles')
         .update(newProfileData)
-        .eq('id', profile.id);
+        .eq('id', profile.id)
+        .select()
+        .single();
         
       if (error) {
         throw error;
       }
       
-      // Odświeżenie danych po aktualizacji
-      await fetchUserData();
+      // Aktualizacja lokalnego stanu
+      if (data) {
+        setProfile(data);
+        
+        // Aktualizacja pochodnych danych
+        if (data.first_name) {
+          setUserName(data.first_name);
+          
+          let initials = data.first_name.charAt(0).toUpperCase();
+          if (data.last_name) {
+            initials += data.last_name.charAt(0).toUpperCase();
+          }
+          setUserInitials(initials);
+        }
+      }
       
       toast.success('Profil został zaktualizowany');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Nie udało się zaktualizować profilu');
       throw error;
+    } finally {
+      setLoading(prev => ({ ...prev, profile: false }));
     }
   };
 
@@ -141,17 +187,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
     fetchUserData();
   }, []);
 
+  // Kontekst dostępny dla komponentów
+  const contextValue = {
+    profile,
+    userEmail,
+    userName,
+    userInitials,
+    credits,
+    loading,
+    updateProfile,
+    refreshUserData: fetchUserData
+  };
+
   return (
-    <UserContext.Provider value={{
-      loading,
-      profile,
-      credits,
-      userName,
-      userInitials,
-      userEmail,
-      updateProfile,
-      refreshUserData: fetchUserData
-    }}>
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );

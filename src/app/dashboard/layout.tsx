@@ -101,11 +101,11 @@ function DashboardHeader() {
                 <DropdownMenuItem 
                   className="flex items-center gap-2 cursor-pointer text-red-300 hover:bg-red-900/30 hover:text-red-200"
                   onClick={handleSignOut}
-                  disabled={loading}
+                  disabled={loading.initial}
                   data-testid="logout-button"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>{loading ? "Wylogowywanie..." : "Wyloguj się"}</span>
+                  <span>{loading.initial ? "Wylogowywanie..." : "Wyloguj się"}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

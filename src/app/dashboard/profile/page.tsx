@@ -7,29 +7,21 @@ import {
   ChevronLeft, 
   Save, 
   Loader2,
+  User,
   CalendarIcon,
   Clock,
   MapPin,
   Heart,
-  User
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from '@/components/ui/label';
+import { useUser } from '@/contexts/UserContext';
+import { RELATIONSHIP_STATUS_OPTIONS } from '@/types/profile';
 import {
   Select,
   SelectContent,
@@ -37,48 +29,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RELATIONSHIP_STATUS_OPTIONS, type ZodiacSign } from '@/types/profile';
-import { useUser } from '@/contexts/UserContext';
-
-// Schemat walidacji formularza profilu (bez zmian)
-const profileFormSchema = z.object({
-  first_name: z.string().min(2, 'Imię musi mieć minimum 2 znaki').max(50, 'Imię może mieć maksymalnie 50 znaków').optional().nullable(),
-  last_name: z.string().min(2, 'Nazwisko musi mieć minimum 2 znaki').max(50, 'Nazwisko może mieć maksymalnie 50 znaków').optional().nullable(),
-  birth_date: z.string().optional().nullable(),
-  birth_time: z.string().optional().nullable(),
-  birth_location: z.string().max(255, 'Miejsce urodzenia może mieć maksymalnie 255 znaków').optional().nullable(),
-  current_location: z.string().max(255, 'Obecna lokalizacja może mieć maksymalnie 255 znaków').optional().nullable(),
-  relationship_status: z.string().optional().nullable(),
-});
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-  const { profile, updateProfile, loading: profileLoading } = useUser();
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
-  const [zodiacSigns, setZodiacSigns] = useState<ZodiacSign[]>([]);
-
-  // Inicjalizacja formularza z react-hook-form
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      birth_date: '',
-      birth_time: '',
-      birth_location: '',
-      current_location: '',
-      relationship_status: '',
-    }
+  const { profile, loading, updateProfile, refreshUserData } = useUser();
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    birth_date: '',
+    birth_time: '',
+    birth_location: '',
+    current_location: '',
+    relationship_status: '',
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // Dodajemy key do wymuszenia pełnego przeładowania komponentu
+  const [selectKey, setSelectKey] = useState(Date.now());
 
-  // Aktualizacja wartości formularza gdy profile się zmieni
+  // Aktualizuj formularz gdy dane profilu się zmienią
   useEffect(() => {
     if (profile) {
-      // Resetujemy formularz z nowymi wartościami z profilu
-      form.reset({
+      const newFormData = {
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         birth_date: profile.birth_date || '',
@@ -86,66 +59,66 @@ export default function ProfilePage() {
         birth_location: profile.birth_location || '',
         current_location: profile.current_location || '',
         relationship_status: profile.relationship_status || '',
-      });
+      };
+      
+      setFormData(newFormData);
+      
+      // Wymuszenie przeładowania komponentu Select
+      setSelectKey(Date.now());
     }
-  }, [profile, form]);
+  }, [profile]);
 
-  // Pobranie znaków zodiaku przy pierwszym renderowaniu
-  useEffect(() => {
-    const fetchZodiacSigns = async () => {
-      setLoading(true);
-      try {
-        // Pobranie znaków zodiaku
-        const { data: zodiacData, error: zodiacError } = await supabase
-          .from('zodiac_signs')
-          .select('*')
-          .order('start_date');
-          
-        if (zodiacError) {
-          throw zodiacError;
-        }
-        
-        if (zodiacData) {
-          setZodiacSigns(zodiacData);
-        }
-      } catch (error) {
-        console.error('Error fetching zodiac signs:', error);
-        toast.error('Nie udało się pobrać znaków zodiaku');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Obsługa zmiany pól formularza
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Obsługa zmiany dla pola select
+  const handleSelectChange = (name: string, value: string) => {
+    console.log(`Zmiana statusu związku: ${name} = ${value}`);
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Obsługa zapisu formularza
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    fetchZodiacSigns();
-  }, [supabase]);
-
-  // Ograniczenie daty do 4 cyfr w roku
-  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dateInput = e.target.value;
-    if (dateInput.length > 10) {
-      e.target.value = dateInput.slice(0, 10);
+    if (!profile) {
+      toast.error('Brak danych profilu');
+      return;
+    }
+    
+    // Logujemy wartość przed zapisem
+    console.log('Zapisywanie statusu związku:', formData.relationship_status);
+    
+    setIsSaving(true);
+    try {
+      await updateProfile(formData);
+      //toast.success('Profil został zaktualizowany');
+      
+      // Odświeżamy komponent Select po zapisie
+      setSelectKey(Date.now());
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Wystąpił błąd podczas zapisywania profilu');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-// Obsługa zapisu formularza
-const onSubmit = async (values: ProfileFormValues) => {
-  if (loading) return;
-  
-  setLoading(true);
-  try {
-    // Krok 1: Zapisanie profilu
-    await updateProfile(values);
-    
-  } catch (error) {
-    console.error('Error saving profile:', error);
-    toast.error('Wystąpił błąd podczas zapisywania profilu', {
-      id: 'profile-error'
-    });
-  } finally {
-    // Zawsze resetujemy stan ładowania po zakończeniu operacji
-    setLoading(false);
-  }
-};
+  // Odświeżanie danych profilu
+  const handleRefresh = async () => {
+    try {
+      await refreshUserData();
+      toast.success('Dane zostały odświeżone');
+      
+      // Odświeżamy komponent Select po refreshu danych
+      setSelectKey(Date.now());
+    } catch (error) {
+      toast.error('Nie udało się odświeżyć danych');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -155,6 +128,16 @@ const onSubmit = async (values: ProfileFormValues) => {
           <span className="sr-only">Powrót</span>
         </Link>
         <h1 className="text-2xl font-bold text-white" data-testid="profile-title">Twój profil astralny</h1>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="ml-auto"
+          onClick={handleRefresh}
+          disabled={loading.initial}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading.initial ? 'animate-spin' : ''}`} />
+          <span className="sr-only">Odśwież dane</span>
+        </Button>
       </div>
 
       <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-glow">
@@ -165,249 +148,195 @@ const onSubmit = async (values: ProfileFormValues) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {(profileLoading) ? (
+          {loading.initial ? (
             <div className="flex justify-center py-8" data-testid="profile-loading-spinner">
               <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
             </div>
           ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="profile-form">
-                <fieldset disabled={loading} className="space-y-5" data-testid="profile-form-fields">
-                  <div className="grid gap-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Imię */}
-                      <FormField
-                        control={form.control}
-                        name="first_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">
-                              <User className="h-4 w-4 inline mr-2" />
-                              Imię
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                data-testid="first-name-input"
-                                placeholder="Wprowadź swoje imię" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`}
-                                {...field} 
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Twoje imię używane w horoskopach
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {/* Nazwisko */}
-                      <FormField
-                        control={form.control}
-                        name="last_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">Nazwisko</FormLabel>
-                            <FormControl>
-                              <Input 
-                                data-testid="last-name-input"
-                                placeholder="Wprowadź swoje nazwisko" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`} 
-                                {...field} 
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Opcjonalne, tylko do naszej wiadomości
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Data urodzenia */}
-                      <FormField
-                        control={form.control}
-                        name="birth_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">
-                              <CalendarIcon className="h-4 w-4 inline mr-2" />
-                              Data urodzenia
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                data-testid="birth-date-input"
-                                type="date" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white ${loading ? 'opacity-75' : ''}`} 
-                                {...field} 
-                                value={field.value || ''}
-                                onChange={(e) => {
-                                  handleDateInput(e);
-                                  field.onChange(e);
-                                }}
-                                max="9999-12-31" // Ograniczenie daty do 4-cyfrowego roku
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Niezbędne do obliczenia Twojego znaku zodiaku
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {/* Godzina urodzenia */}
-                      <FormField
-                        control={form.control}
-                        name="birth_time"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">
-                              <Clock className="h-4 w-4 inline mr-2" />
-                              Godzina urodzenia
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="time" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white ${loading ? 'opacity-75' : ''}`} 
-                                {...field} 
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Pomaga określić Twój ascendent
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Miejsce urodzenia */}
-                      <FormField
-                        control={form.control}
-                        name="birth_location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">
-                              <MapPin className="h-4 w-4 inline mr-2" />
-                              Miejsce urodzenia
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Miasto, kraj" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`} 
-                                {...field} 
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Wpływa na dokładność Twojego horoskopu
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {/* Obecna lokalizacja */}
-                      <FormField
-                        control={form.control}
-                        name="current_location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-indigo-100">
-                              <MapPin className="h-4 w-4 inline mr-2" />
-                              Obecna lokalizacja
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Miasto, kraj" 
-                                className={`bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50 ${loading ? 'opacity-75' : ''}`} 
-                                {...field} 
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-indigo-300/70">
-                              Pomaga w dostosowaniu przepowiedni do Twojego obecnego położenia
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Stan związku */}
-                    <FormField
-                      control={form.control}
-                      name="relationship_status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-indigo-100">
-                            <Heart className="h-4 w-4 inline mr-2" />
-                            Stan związku
-                          </FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                            }}
-                            defaultValue={field.value || ''}
-                          >
-                            <FormControl>
-                              <SelectTrigger className={`bg-indigo-950/50 border-indigo-300/30 text-white ${loading ? 'opacity-75' : ''}`}>
-                                <SelectValue placeholder="Wybierz stan związku" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-indigo-900 border-indigo-300/30 text-white">
-                              {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription className="text-indigo-300/70">
-                            Pomaga w tworzeniu horoskopów dotyczących relacji
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+            <form onSubmit={handleSubmit} className="space-y-6" data-testid="profile-form">
+              <div className="grid gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Imię */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">
+                      <User className="h-4 w-4 inline mr-2" />
+                      Imię
+                    </Label>
+                    <Input 
+                      data-testid="first-name-input"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      placeholder="Wprowadź swoje imię" 
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
                     />
                   </div>
-
-                  <div className="bg-indigo-800/30 p-4 rounded-lg border border-indigo-300/20">
-                    <p className="text-indigo-100 text-sm">
-                      <span className="font-semibold">Dlaczego te informacje są ważne?</span> Każdy szczegół Twojego życia ma znaczenie w układaniu precyzyjnej mapy astralnej. Im więcej informacji nam udostępnisz, tym dokładniejsze będą Twoje horoskopy i przepowiednie. Twoje dane są bezpieczne i wykorzystywane wyłącznie do celów astrologicznych.
-                    </p>
+                  
+                  {/* Nazwisko */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">Nazwisko</Label>
+                    <Input 
+                      data-testid="last-name-input"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      placeholder="Wprowadź swoje nazwisko" 
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
+                    />
                   </div>
-                </fieldset>
-                
-                <div className="flex justify-end pt-2">
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                    data-testid="save-profile-button"
-                    className={`bg-indigo-600 hover:bg-indigo-500 text-white border-none shadow-glow w-full sm:w-auto transition-all ${loading ? 'opacity-90 pointer-events-none' : ''}`}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" data-testid="saving-spinner" />
-                        Zapisywanie...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Zapisz profil
-                      </>
-                    )}
-                  </Button>
                 </div>
-              </form>
-            </Form>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Data urodzenia */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">
+                      <CalendarIcon className="h-4 w-4 inline mr-2" />
+                      Data urodzenia
+                    </Label>
+                    <Input 
+                      data-testid="birth-date-input"
+                      name="birth_date"
+                      type="date" 
+                      value={formData.birth_date}
+                      onChange={handleInputChange}
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white"
+                    />
+                  </div>
+                  
+                  {/* Godzina urodzenia */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">
+                      <Clock className="h-4 w-4 inline mr-2" />
+                      Godzina urodzenia
+                    </Label>
+                    <Input 
+                      name="birth_time"
+                      type="time" 
+                      value={formData.birth_time}
+                      onChange={handleInputChange}
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Miejsce urodzenia */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">
+                      <MapPin className="h-4 w-4 inline mr-2" />
+                      Miejsce urodzenia
+                    </Label>
+                    <Input 
+                      name="birth_location"
+                      value={formData.birth_location}
+                      onChange={handleInputChange}
+                      placeholder="Miasto, kraj" 
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
+                    />
+                  </div>
+                  
+                  {/* Obecna lokalizacja */}
+                  <div className="space-y-2">
+                    <Label className="text-indigo-100">
+                      <MapPin className="h-4 w-4 inline mr-2" />
+                      Obecna lokalizacja
+                    </Label>
+                    <Input 
+                      name="current_location"
+                      value={formData.current_location}
+                      onChange={handleInputChange}
+                      placeholder="Miasto, kraj" 
+                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Stan związku */}
+                <div className="space-y-2">
+                  <Label className="text-indigo-100">
+                    <Heart className="h-4 w-4 inline mr-2" />
+                    Stan związku
+                  </Label>
+                  
+                  {/* Dodajemy key do komponentu Select, żeby wymusić jego przeładowanie */}
+                  <Select
+                    key={selectKey}
+                    defaultValue={formData.relationship_status}
+                    onValueChange={(value) => handleSelectChange('relationship_status', value)}
+                  >
+                    <SelectTrigger className="bg-indigo-950/50 border-indigo-300/30 text-white">
+                      <SelectValue placeholder="Wybierz stan związku">
+                        {/* Dodajemy jawne wyświetlanie aktualnie wybranej wartości */}
+                        {formData.relationship_status ? 
+                          RELATIONSHIP_STATUS_OPTIONS.find(option => option.value === formData.relationship_status)?.label || "Wybierz stan związku" 
+                          : "Wybierz stan związku"
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-indigo-900 border-indigo-300/30 text-white">
+                      {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Pokaż/ukryj aktualny stan */}
+              <div className="flex justify-end">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="text-indigo-300 hover:text-indigo-200"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? 'Ukryj szczegóły techniczne' : 'Pokaż szczegóły techniczne'}
+                </Button>
+              </div>
+              
+              {/* Zaawansowane informacje (aktualny stan) */}
+              {showAdvanced && (
+                <div className="bg-indigo-900/60 rounded p-4 border border-indigo-300/30 text-white text-sm">
+                  <h3 className="font-semibold mb-2">Aktualny stan kontekstu (profile):</h3>
+                  <pre className="overflow-auto max-h-48 text-xs">
+                    {JSON.stringify(profile, null, 2)}
+                  </pre>
+                  <h3 className="font-semibold mb-2 mt-4">Aktualny stan formularza:</h3>
+                  <pre className="overflow-auto max-h-48 text-xs">
+                    {JSON.stringify(formData, null, 2)}
+                  </pre>
+                </div>
+              )}
+              
+              <div className="bg-indigo-800/30 p-4 rounded-lg border border-indigo-300/20">
+                <p className="text-indigo-100 text-sm">
+                  <span className="font-semibold">Dlaczego te informacje są ważne?</span> Każdy szczegół Twojego życia ma znaczenie w układaniu precyzyjnej mapy astralnej. Im więcej informacji nam udostępnisz, tym dokładniejsze będą Twoje horoskopy i przepowiednie. Twoje dane są bezpieczne i wykorzystywane wyłącznie do celów astrologicznych.
+                </p>
+              </div>
+              
+              <div className="flex justify-end pt-2">
+                <Button 
+                  type="submit" 
+                  disabled={isSaving || loading.profile}
+                  data-testid="save-profile-button"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white border-none shadow-glow"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" data-testid="saving-spinner" />
+                      Zapisywanie...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Zapisz profil
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           )}
         </CardContent>
       </Card>

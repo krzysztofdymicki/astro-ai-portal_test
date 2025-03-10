@@ -1,117 +1,167 @@
-// src/app/page.tsx
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+'use client';
 
-export default function Home() {
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { 
+  User, 
+  BarChart, 
+  HelpCircle, 
+  File, 
+  Moon, 
+  Star
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@/contexts/UserContext';
+
+export default function Dashboard() {
+  const router = useRouter();
+  const { profile } = useUser();
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="bg-transparent z-10 py-4 sm:py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-            <h1 className="text-3xl text-light text-white mb-4 sm:mb-0">
-              Twoja Przepowiednia
-            </h1>
-            <div className="flex gap-3 sm:gap-4">
-              <Button asChild className="flex-1 sm:flex-none btn-secondary">
-                <Link href="/login">Zaloguj się</Link>
-              </Button>
-              <Button asChild className="flex-1 sm:flex-none btn-primary">
-                <Link href="/register">Zarejestruj się</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      <main className="flex-grow z-10 pt-6 sm:pt-12">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl text-light mystical-glow text-white">
-              <span className="block mb-2">Odkryj swoją przyszłość</span>
-              <span className="block text-indigo-300">z pomocą doświadczonych astrologów</span>
-            </h1>
-            <p className="mx-auto mt-4 sm:mt-6 max-w-md text-base text-light text-indigo-100/90 sm:text-lg md:max-w-3xl md:text-xl leading-relaxed">
-              Personalizowane horoskopy, wróżby i porady tworzone specjalnie dla Ciebie
-              przez ekspertów w dziedzinie astrologii i ezoteryki.
-            </p>
-            <div className="mx-auto mt-6 sm:mt-8 max-w-xs">
-              <Button asChild className="w-full btn-primary py-6 text-base">
-                <Link href="/register">Rozpocznij za darmo</Link>
-              </Button>
-            </div>
-          </div>
-          
-          {/* Sekcja pokazująca zalety */}
-          <div className="mt-20 sm:mt-24">
-            <h2 className="text-xl sm:text-2xl text-light text-center mb-10 sm:mb-16 text-white">
-              Dlaczego nasi klienci nam ufają?
-            </h2>
-            <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-              <div className="text-center p-6 container-transparent">
-                <div className="text-2xl sm:text-3xl text-light text-indigo-300 mb-3">15+</div>
-                <h3 className="text-base sm:text-lg mb-2 text-white text-light">Lat doświadczenia</h3>
-                <p className="text-indigo-100/80 text-sm sm:text-base text-light">
-                  Nasi astrologowie posiadają wieloletnie doświadczenie w interpretacji gwiazd.
-                </p>
-              </div>
-              <div className="text-center p-6 container-transparent">
-                <div className="text-2xl sm:text-3xl text-light text-indigo-300 mb-3">10 000+</div>
-                <h3 className="text-base sm:text-lg mb-2 text-white text-light">Zadowolonych klientów</h3>
-                <p className="text-indigo-100/80 text-sm sm:text-base text-light">
-                  Tysiące osób zaufało naszym prognozom i poradom życiowym.
-                </p>
-              </div>
-              <div className="text-center p-6 container-transparent">
-                <div className="text-2xl sm:text-3xl text-light text-indigo-300 mb-3">ponad 90%</div>
-                <h3 className="text-base sm:text-lg mb-2 text-white text-light">Trafność</h3>
-                <p className="text-indigo-100/80 text-sm sm:text-base text-light">
-                  Nasze prognozy charakteryzują się niezwykłą precyzją i trafnością.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Sekcja świadectw */}
-          <div className="mt-16 sm:mt-24 mb-16">
-            <h2 className="text-xl sm:text-2xl text-light text-center mb-10 sm:mb-16 text-white">
-              Co mówią nasi klienci
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
-              <div className="p-6 container-transparent">
-                <p className="italic text-indigo-100/80 mb-4 text-light text-sm sm:text-base leading-relaxed">
-                  &quot;Nigdy nie wierzyłam w astrologię, dopóki nie wypróbowałam tej strony. 
-                  Horoskopy są tak trafne, że aż mnie ciarki przechodzą!&quot;
-                </p>
-                <p className="text-light text-white text-sm sm:text-base">
-                  - Anna K., Warszawa
-                </p>
-              </div>
-              <div className="p-6 container-transparent">
-                <p className="italic text-indigo-100/80 mb-4 text-light text-sm sm:text-base leading-relaxed">
-                  &quot;Korzystam z tych horoskopów codziennie. Pomagają mi podejmować 
-                  lepsze decyzje i rozumieć siebie.&quot;
-                </p>
-                <p className="text-light text-white text-sm sm:text-base">
-                  - Marek W., Kraków
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-      <div className="h-16 bg-gradient-to-b from-transparent to-[rgba(10,5,25,0.3)] backdrop-blur-[1px] mt-8"></div>
+    <div className="space-y-6" data-testid="dashboard-container">
+      {/* Główna zawartość - zamieniony nagłówek z personalizacją */}
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-white mystical-glow" data-testid="welcome-heading">
+          Witaj, {profile?.first_name || 'Wędrowcze Gwiazd'}!
+        </h1>
+        <p className="text-indigo-200 text-light mt-2" data-testid="welcome-subheading">
+          Twoja osobista przepowiednia czeka na odkrycie
+        </p>
+      </div>
 
-      {/* Stopka z płynnym przejściem */}
-      <footer className="relative z-10">
-        {/* Gradient przejścia w stopce */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,5,25,0.3)] to-[rgba(10,5,25,0.6)] backdrop-blur-[2px]"></div>
-        
-        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-indigo-200/80 text-light">
-            &copy; {new Date().getFullYear()} Twoja Przepowiednia. Wszystkie prawa zastrzeżone.
-          </p>
-        </div>
-      </footer>
+      {/* Kafelki z funkcjami - zastosowanie grid z równymi wysokościami */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="dashboard-cards-grid">
+        {/* Kafelek profilu */}
+        <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all flex flex-col h-full" data-testid="profile-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-indigo-300" />
+              Twój Profil Astralny
+            </CardTitle>
+            <CardDescription className="text-indigo-200/70">
+              Uzupełnij informacje o sobie, aby otrzymać spersonalizowane horoskopy
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="relative pt-1">
+              <div className="flex mb-2 items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full bg-indigo-800 text-indigo-200">
+                    Status profilu
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-semibold inline-block text-indigo-200" data-testid="profile-completion-percentage">
+                    {profile?.profile_completion_percentage || 0}%
+                  </span>
+                </div>
+              </div>
+              <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-800/50">
+                <div 
+                  style={{ width: `${profile?.profile_completion_percentage || 0}%` }} 
+                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500"
+                  data-testid="profile-progress-bar"
+                ></div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="mt-auto pt-4">
+            <Link href="/dashboard/profile" className="w-full" data-testid="profile-link">
+              <button className="w-full py-2 px-4 bg-indigo-700 hover:bg-indigo-600 text-white rounded-md transition-colors shadow-lg" data-testid="profile-button">
+                {profile?.profile_completion_percentage === 100 ? "Edytuj profil" : "Uzupełnij profil"}
+              </button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        {/* Kafelek dodatkowych pytań */}
+        <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all flex flex-col h-full" data-testid="questions-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-indigo-300" />
+              Pytania Dodatkowe
+            </CardTitle>
+            <CardDescription className="text-indigo-200/70">
+              Odpowiedz na dodatkowe pytania i zdobądź bonusowe kredyty
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-indigo-200">Dostępne pytania:</span>
+                <span className="text-sm font-semibold">5</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-indigo-200">Możliwe do zdobycia kredyty:</span>
+                <span className="text-sm font-semibold">25</span>
+              </div>
+              <div className="p-2 bg-indigo-800/30 rounded text-xs text-indigo-100 italic">
+                "Im więcej wiemy o Tobie, tym dokładniejsze są nasze przepowiednie."
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="mt-auto pt-4">
+            <Link href="/dashboard/questions" className="w-full" data-testid="questions-link">
+              <button className="w-full py-2 px-4 bg-indigo-700 hover:bg-indigo-600 text-white rounded-md transition-colors shadow-lg" data-testid="questions-button">
+                Odpowiedz na pytania
+              </button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        {/* Kafelek horoskopów */}
+        <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all flex flex-col h-full" data-testid="horoscopes-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Moon className="h-5 w-5 text-indigo-300" />
+              Twoje Horoskopy
+            </CardTitle>
+            <CardDescription className="text-indigo-200/70">
+              Zobacz swoje horoskopy i spersonalizowane przepowiednie
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-2 bg-indigo-800/30 rounded">
+                <span className="flex items-center text-sm">
+                  <Star className="h-4 w-4 mr-2 text-yellow-300" />
+                  Dzienny
+                </span>
+                <span className="text-xs text-green-300">Dostępny</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-indigo-800/30 rounded">
+                <span className="flex items-center text-sm">
+                  <BarChart className="h-4 w-4 mr-2 text-blue-300" />
+                  Miesięczny
+                </span>
+                <span className="text-xs text-indigo-200">5 kredytów</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-indigo-800/30 rounded">
+                <span className="flex items-center text-sm">
+                  <File className="h-4 w-4 mr-2 text-purple-300" />
+                  Życiowy
+                </span>
+                <span className="text-xs text-indigo-200">20 kredytów</span>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="mt-auto pt-4">
+            <Link href="/dashboard/horoscopes" className="w-full" data-testid="horoscopes-link">
+              <button className="w-full py-2 px-4 bg-indigo-700 hover:bg-indigo-600 text-white rounded-md transition-colors shadow-lg" data-testid="horoscopes-button">
+                Przeglądaj horoskopy
+              </button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Cytat motywacyjny */}
+      <div className="mt-10 text-center py-4" data-testid="quote-container">
+        <p className="text-indigo-200 italic text-light" data-testid="quote-text">
+          "Gwiazdy nie determinują Twojego przeznaczenia. One jedynie oświetlają ścieżkę, którą możesz podążać."
+        </p>
+        <p className="text-indigo-300 text-sm mt-1" data-testid="quote-author">― Starożytna mądrość astrologiczna</p>
+      </div>
     </div>
-  )
+  );
 }
