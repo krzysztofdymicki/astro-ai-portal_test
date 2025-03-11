@@ -13,8 +13,7 @@ import {
   Award, 
   ArrowRight, 
   HelpCircle, 
-  CheckCircle2, 
-  Info,
+  CheckCircle2,
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';

@@ -17,8 +17,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Badge } from '@/components/ui/badge';
 
 export default function Dashboard() {
-  const router = useRouter();
-  const { profile, loading, questionsStats, credits, zodiacSign } = useUser();
+  const { profile, questionsStats, credits, zodiacSign } = useUser();
 
   // Sprawdź, czy wszystkie pytania zostały odpowiedziane
   const allQuestionsAnswered = questionsStats.answeredQuestions === questionsStats.totalQuestions && questionsStats.totalQuestions > 0;

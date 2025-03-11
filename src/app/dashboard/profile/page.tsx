@@ -29,8 +29,7 @@ import {
 } from "@/components/ui/select";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { profile, loading, updateProfile, refreshUserData, zodiacSign } = useUser();
+  const { profile, loading, updateProfile, zodiacSign } = useUser();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',

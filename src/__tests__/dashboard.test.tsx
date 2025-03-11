@@ -1,12 +1,10 @@
 // src/__tests__/dashboard.test.tsx
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import Dashboard from '../app/dashboard/page';
-import { toast } from 'sonner';
 import * as supabaseClient from '../utils/supabase/client';
 import { mockCreateClient, mockSupabaseClient } from '../utils/test-utils';
-import { within } from '@testing-library/react';
 import { UserProvider } from '../contexts/UserContext'; // Import UserProvider
 
 // Mock modułów

@@ -2,7 +2,6 @@
 import type { Metadata } from 'next'
 import '../globals.css'
 import Link from 'next/link'
-import CosmicBackground from '@/components/background/CosmicBackground'
 
 export const metadata: Metadata = {
   title: 'Twoja Przepowiednia - Zaloguj się lub Zarejestruj',

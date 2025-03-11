@@ -141,8 +141,7 @@ export default function DebugContextPanel() {
     userEmail,
     credits,
     questionsStats,
-    loading,
-    ...restContext
+    loading
   } = userContext;
 
   return (
