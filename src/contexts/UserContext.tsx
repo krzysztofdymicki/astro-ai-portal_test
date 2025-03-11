@@ -419,7 +419,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           // Odświeżenie kredytów (które zostały przyznane przez trigger)
           await refreshCredits();
           
-          toast.success('Dziękujemy za odpowiedź!');
+          //toast.success('Dziękujemy za odpowiedź!');
           return true;
         }
       }
