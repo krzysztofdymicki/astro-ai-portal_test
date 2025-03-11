@@ -8,14 +8,36 @@ import {
   HelpCircle, 
   File, 
   Moon, 
-  Star
+  Star,
+  CheckCircle,
+  Award
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
+import { Badge } from '@/components/ui/badge';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { profile, loading, questionsStats, credits } = useUser();
+  const { profile, loading, questionsStats, credits, zodiacSign } = useUser();
+
+  // Sprawdź, czy wszystkie pytania zostały odpowiedziane
+  const allQuestionsAnswered = questionsStats.answeredQuestions === questionsStats.totalQuestions && questionsStats.totalQuestions > 0;
+
+  // Przygotuj tekst opisu elementu znaku zodiaku
+  const getElementDescription = (element: string) => {
+    switch (element) {
+      case 'Ogień':
+        return 'Pasja, energia, entuzjazm';
+      case 'Ziemia':
+        return 'Stabilność, praktyczność, wytrwałość';
+      case 'Powietrze':
+        return 'Intelekt, komunikacja, adaptacyjność';
+      case 'Woda':
+        return 'Emocje, intuicja, wrażliwość';
+      default:
+        return '';
+    }
+  };
 
   return (
     <div className="space-y-6" data-testid="dashboard-container">
@@ -31,7 +53,7 @@ export default function Dashboard() {
 
       {/* Kafelki z funkcjami - zastosowanie grid z równymi wysokościami */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="dashboard-cards-grid">
-        {/* Kafelek profilu */}
+        {/* Kafelek profilu - z dodatkowymi informacjami o znaku zodiaku */}
         <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all flex flex-col h-full" data-testid="profile-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -43,7 +65,7 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
-            <div className="relative pt-1">
+            <div className="relative pt-1 mb-4">
               <div className="flex mb-2 items-center justify-between">
                 <div>
                   <span className="text-xs font-semibold inline-block py-1 px-2 rounded-full bg-indigo-800 text-indigo-200">
@@ -64,6 +86,51 @@ export default function Dashboard() {
                 ></div>
               </div>
             </div>
+
+            {/* Nowa sekcja: Informacje o znaku zodiaku */}
+            {zodiacSign && (
+              <div className="bg-indigo-800/30 p-3 rounded-lg border border-indigo-500/20 mb-3">
+                <div className="flex items-center mb-2">
+                  <span className="text-2xl mr-2">{zodiacSign.symbol}</span>
+                  <div>
+                    <h4 className="font-medium">{zodiacSign.name}</h4>
+                    <div className="flex items-center mt-1">
+                      <Badge className="bg-indigo-700/70 text-indigo-100 text-xs">
+                        {zodiacSign.element}
+                      </Badge>
+                      <span className="text-xs text-indigo-300 ml-2">
+                        {getElementDescription(zodiacSign.element)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-indigo-200 italic">
+                  {zodiacSign.name === 'Baran' && 'Odważny i energiczny pionier, zawsze gotowy do działania.'}
+                  {zodiacSign.name === 'Byk' && 'Lojalny i praktyczny, ceni stabilność i piękno w życiu.'}
+                  {zodiacSign.name === 'Bliźnięta' && 'Wszechstronny i ciekawy, uwielbia nowe doświadczenia i wiedzę.'}
+                  {zodiacSign.name === 'Rak' && 'Uczuciowy i opiekuńczy, troszczy się o bliskich i dom.'}
+                  {zodiacSign.name === 'Lew' && 'Charyzmatyczny i dumny, promieniuje pewnością siebie.'}
+                  {zodiacSign.name === 'Panna' && 'Analityczny i dokładny, dąży do doskonałości we wszystkim.'}
+                  {zodiacSign.name === 'Waga' && 'Dyplomatyczny i harmonijny, zawsze szuka równowagi.'}
+                  {zodiacSign.name === 'Skorpion' && 'Intensywny i pełen pasji, potrafi przeniknąć do sedna spraw.'}
+                  {zodiacSign.name === 'Strzelec' && 'Optymistyczny i wolny duch, poszukujący prawdy i przygód.'}
+                  {zodiacSign.name === 'Koziorożec' && 'Ambitny i odpowiedzialny, cierpliwie dąży do swoich celów.'}
+                  {zodiacSign.name === 'Wodnik' && 'Oryginalny i niezależny, wizjoner wyprzedzający swoje czasy.'}
+                  {zodiacSign.name === 'Ryby' && 'Wrażliwy i intuicyjny, połączony z wyższymi wymiarami.'}
+                </p>
+              </div>
+            )}
+            
+            {!zodiacSign && (
+              <div className="bg-indigo-800/30 p-3 rounded-lg border border-indigo-500/20 mb-3">
+                <div className="flex items-center justify-center">
+                  <Moon className="h-5 w-5 text-indigo-300 mr-2" />
+                  <p className="text-sm text-indigo-200">
+                    Uzupełnij datę urodzenia, aby odkryć swój znak zodiaku
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="mt-auto pt-4">
             <Link href="/dashboard/profile" className="w-full" data-testid="profile-link">
@@ -74,40 +141,71 @@ export default function Dashboard() {
           </CardFooter>
         </Card>
 
-        {/* Kafelek dodatkowych pytań */}
+        {/* Kafelek dodatkowych pytań - ze zmienioną treścią dla ukończonych pytań */}
         <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all flex flex-col h-full" data-testid="questions-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-indigo-300" />
-              Pytania Dodatkowe
+              {allQuestionsAnswered ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-300" />
+                  Pytania Ukończone
+                </>
+              ) : (
+                <>
+                  <HelpCircle className="h-5 w-5 text-indigo-300" />
+                  Pytania Dodatkowe
+                </>
+              )}
             </CardTitle>
             <CardDescription className="text-indigo-200/70">
-              Odpowiedz na dodatkowe pytania i zdobądź bonusowe kredyty
+              {allQuestionsAnswered 
+                ? "Dziękujemy za odpowiedzi! Pomogły nam stworzyć lepszy horoskop dla Ciebie" 
+                : "Odpowiedz na dodatkowe pytania i zdobądź bonusowe kredyty"}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-indigo-200">Odpowiedziane pytania:</span>
-                <span className="text-sm font-semibold">{questionsStats.answeredQuestions} / {questionsStats.totalQuestions}</span>
+                <span className="text-sm font-semibold">
+                  {questionsStats.answeredQuestions} / {questionsStats.totalQuestions}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-indigo-200">Zdobyte kredyty:</span>
-                <span className="text-sm font-semibold">{questionsStats.earnedCredits}</span>
+                <div className="flex items-center">
+                  <span className="text-sm font-semibold mr-1">{questionsStats.earnedCredits}</span>
+                  <Star className="h-3 w-3 text-yellow-300" />
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-indigo-200">Pozostałe do zdobycia:</span>
-                <span className="text-sm font-semibold">{questionsStats.remainingCredits}</span>
-              </div>
-              <div className="p-2 bg-indigo-800/30 rounded text-xs text-indigo-100 italic">
-                "Im więcej wiemy o Tobie, tym dokładniejsze są nasze przepowiednie."
+              {!allQuestionsAnswered && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-indigo-200">Pozostałe do zdobycia:</span>
+                  <div className="flex items-center">
+                    <span className="text-sm font-semibold mr-1">{questionsStats.remainingCredits}</span>
+                    <Star className="h-3 w-3 text-yellow-300" />
+                  </div>
+                </div>
+              )}
+              
+              <div className={`p-2 ${allQuestionsAnswered ? 'bg-green-800/30' : 'bg-indigo-800/30'} rounded text-xs ${allQuestionsAnswered ? 'text-green-100' : 'text-indigo-100'} italic`}>
+                {allQuestionsAnswered 
+                  ? "Osiągnąłeś maksimum kredytów z pytań! Twój horoskop będzie bardzo dokładny."
+                  : "Im więcej wiemy o Tobie, tym dokładniejsze są nasze przepowiednie."}
               </div>
             </div>
           </CardContent>
           <CardFooter className="mt-auto pt-4">
             <Link href="/dashboard/questions" className="w-full" data-testid="questions-link">
-              <button className="w-full py-2 px-4 bg-indigo-700 hover:bg-indigo-600 text-white rounded-md transition-colors shadow-lg" data-testid="questions-button">
-                Odpowiedz na pytania
+              <button className={`w-full py-2 px-4 ${allQuestionsAnswered ? 'bg-green-700 hover:bg-green-600' : 'bg-indigo-700 hover:bg-indigo-600'} text-white rounded-md transition-colors shadow-lg`} data-testid="questions-button">
+                {allQuestionsAnswered ? (
+                  <>
+                    <CheckCircle className="inline-block h-4 w-4 mr-2" />
+                    Przeglądaj odpowiedzi
+                  </>
+                ) : (
+                  <>Odpowiedz na pytania</>
+                )}
               </button>
             </Link>
           </CardFooter>
@@ -138,14 +236,29 @@ export default function Dashboard() {
                   <BarChart className="h-4 w-4 mr-2 text-blue-300" />
                   Miesięczny
                 </span>
-                <span className="text-xs text-indigo-200">5 kredytów</span>
+                <div className="flex items-center">
+                  <span className="text-xs text-indigo-200 mr-1">5</span>
+                  <Star className="h-3 w-3 text-yellow-300" />
+                </div>
               </div>
               <div className="flex justify-between items-center p-2 bg-indigo-800/30 rounded">
                 <span className="flex items-center text-sm">
                   <File className="h-4 w-4 mr-2 text-purple-300" />
                   Życiowy
                 </span>
-                <span className="text-xs text-indigo-200">20 kredytów</span>
+                <div className="flex items-center">
+                  <span className="text-xs text-indigo-200 mr-1">20</span>
+                  <Star className="h-3 w-3 text-yellow-300" />
+                </div>
+              </div>
+              <div className="p-2 rounded text-xs text-indigo-200">
+                <div className="flex items-center mb-1">
+                  <Award className="h-4 w-4 text-yellow-300 mr-1" />
+                  <span className="font-medium">Twoje kredyty: {credits?.balance || 0}</span>
+                </div>
+                <p className="text-xs text-indigo-300 pl-5">
+                  Użyj kredytów, aby odblokować specjalne horoskopy
+                </p>
               </div>
             </div>
           </CardContent>
