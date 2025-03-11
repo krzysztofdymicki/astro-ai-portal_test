@@ -14,7 +14,8 @@ import {
   ArrowRight, 
   HelpCircle, 
   CheckCircle2, 
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -104,7 +105,7 @@ export default function QuestionsPage() {
         </Link>
         
         <div className="flex items-center gap-4">
-          {/* Znak zodiaku użytkownika */}
+          {/* Znak zodiaku użytkownika - używa description z ZodiacInfo */}
           {zodiacSign && (
             <div className="flex items-center bg-indigo-900/60 px-4 py-2 rounded-full">
               <span className="text-xl mr-2">{zodiacSign.symbol}</span>
@@ -144,20 +145,10 @@ export default function QuestionsPage() {
               value={questionsStats.completionPercentage} 
               className="h-2 bg-indigo-950"
             />
-            <div className="flex justify-between items-center mt-2">
-              <div className="flex items-center">
-                <Info className="h-4 w-4 text-indigo-400 mr-1" />
-                <span className="text-indigo-300 text-xs">Do zdobycia: {questionsStats.remainingCredits} kredytów</span>
-              </div>
-              <div className="flex items-center">
-                <Award className="h-4 w-4 text-yellow-400 mr-1" />
-                <span className="text-indigo-300 text-xs">Zdobyte: {questionsStats.earnedCredits} kredytów</span>
-              </div>
-            </div>
             <p className="text-indigo-300 text-sm italic">
               {questionsStats.completionPercentage === 100 
                 ? "Wszystkie pytania zostały ukończone! Wróć później po więcej." 
-                : "Każda odpowiedź przybliża nas do stworzenia jeszcze lepszej przepowiedni dla Ciebie."}
+                : "Odpowiedz na wszystkie pytania, aby zdobyć maksymalną liczbę kredytów."}
             </p>
           </div>
         </CardContent>
@@ -165,7 +156,7 @@ export default function QuestionsPage() {
       
       {/* Questions area */}
       <AnimatePresence mode="wait">
-        {loading.initial || loading.questions ? (
+        {loading.questions ? (
           <motion.div
             key="loading"
             initial={{ opacity: 0 }}
@@ -173,7 +164,7 @@ export default function QuestionsPage() {
             exit={{ opacity: 0 }}
             className="flex justify-center items-center py-20"
           >
-            <div className="loader"></div>
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
           </motion.div>
         ) : profileQuestions.length === 0 ? (
           <motion.div
@@ -200,15 +191,7 @@ export default function QuestionsPage() {
             <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-lg hover:shadow-indigo-500/20 transition-all">
               <CardHeader>
                 <div className="flex justify-between items-center mb-2">
-                  <CardTitle className="text-xl flex items-center">
-                    {/* Jeśli dostępne, pokaż ikonę i nazwę kategorii */}
-                    {currentQuestion.question_categories && (
-                      <span className="bg-indigo-800/60 text-xs px-2 py-1 rounded mr-2">
-                        {currentQuestion.question_categories.name}
-                      </span>
-                    )}
-                    <span>Pytanie {currentQuestionIndex + 1}</span>
-                  </CardTitle>
+                  <CardTitle className="text-xl">Pytanie {currentQuestionIndex + 1}</CardTitle>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 text-yellow-300 mr-1" />
                     <span className="text-yellow-200 text-sm">
@@ -218,117 +201,34 @@ export default function QuestionsPage() {
                 </div>
                 <CardDescription className="text-indigo-200/70">
                   {isCurrentQuestionAnswered 
-                    ? "To pytanie zostało już przez Ciebie odpowiedziane"
-                    : "Podziel się swoją odpowiedzią, aby otrzymać kredyty"}
+                    ? "To pytanie zostało już przez Ciebie rozwiązane"
+                    : "Odpowiedz na pytanie, aby otrzymać kredyty"}
                 </CardDescription>
               </CardHeader>
               
               <CardContent>
                 <div className="space-y-6">
                   <div className="text-lg text-white font-medium">
-                    {currentQuestion?.question}
+                    {currentQuestion?.question || currentQuestion?.question}
                   </div>
                   
-                  {isCurrentQuestionAnswered ? (
-                    <div className="mt-4 p-4 bg-indigo-800/30 rounded-lg border border-indigo-500/30">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <div className="w-full">
-                          <div className="flex justify-between items-center mb-1">
-                            <p className="text-indigo-100 font-medium">Twoja odpowiedź:</p>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs text-indigo-300 hover:text-indigo-100 py-1 px-2 h-auto"
-                              onClick={() => setIsEditing(true)}
-                            >
-                              Edytuj
-                            </Button>
-                          </div>
-                          
-                          {isEditing ? (
-                            <div className="mt-2">
-                              <Textarea
-                                value={answerText}
-                                onChange={(e) => {
-                                  setAnswerText(e.target.value);
-                                  setTextareaEmpty(e.target.value.trim() === '');
-                                }}
-                                placeholder="Edytuj swoją odpowiedź..."
-                                className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
-                                disabled={loading.submitting}
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-indigo-300 border-indigo-300/30"
-                                  onClick={() => {
-                                    // Przywróć poprzednią odpowiedź i anuluj edycję
-                                    const savedAnswer = getQuestionAnswer(currentQuestion.id) || '';
-                                    setAnswerText(savedAnswer);
-                                    setIsEditing(false);
-                                  }}
-                                  disabled={loading.submitting}
-                                >
-                                  Anuluj
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                                  onClick={async () => {
-                                    if (textareaEmpty) return;
-                                    
-                                    const success = await submitProfileAnswer(currentQuestion.id, answerText);
-                                    if (success) {
-                                      setIsEditing(false);
-                                    }
-                                  }}
-                                  disabled={textareaEmpty || loading.submitting}
-                                >
-                                  Zapisz zmiany
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 0.3 }}
-                            >
-                              <p className="text-indigo-200 italic">
-                                {getQuestionAnswer(currentQuestion.id)}
-                              </p>
-                            </motion.div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4">
-                      <Textarea
-                        value={answerText}
-                        onChange={(e) => {
-                          setAnswerText(e.target.value);
-                          setTextareaEmpty(e.target.value.trim() === '');
-                        }}
-                        placeholder="Wpisz swoją odpowiedź tutaj..."
-                        className="bg-indigo-950/50 border-indigo-300/30 text-white min-h-24 placeholder:text-indigo-400/50"
-                        disabled={loading.submitting}
-                      />
-                      
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ 
-                          opacity: textareaEmpty ? 1 : 0,
-                          height: textareaEmpty ? 'auto' : 0
-                        }}
-                        className="mt-2 overflow-hidden"
-                      >
-                        <p className="text-amber-300/80 text-sm">
-                          Twoja odpowiedź pomoże nam lepiej dopasować horoskop do Twojej osobowości.
-                        </p>
-                      </motion.div>
+                  <div className="pt-2">
+                    <Textarea
+                      value={answerText}
+                      onChange={(e) => {
+                        setAnswerText(e.target.value);
+                        setTextareaEmpty(e.target.value.trim() === '');
+                      }}
+                      placeholder="Wpisz swoją odpowiedź tutaj..."
+                      className="min-h-[120px] bg-indigo-950/50 border-indigo-300/30 text-white"
+                      disabled={loading.submitting || (isCurrentQuestionAnswered && !isEditing)}
+                    />
+                  </div>
+
+                  {isCurrentQuestionAnswered && !isEditing && (
+                    <div className="flex items-center text-emerald-400 bg-emerald-950/30 p-3 rounded-md">
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      <span>Dziękujemy za odpowiedź! Twoje kredyty zostały już przyznane.</span>
                     </div>
                   )}
                 </div>
@@ -351,30 +251,43 @@ export default function QuestionsPage() {
                   </Button>
                   
                   <div className="flex gap-2">
-                    {currentQuestionIndex < profileQuestions.length - 1 && (
+                    {isCurrentQuestionAnswered && !isEditing ? (
                       <Button
                         variant="outline"
-                        className="text-indigo-200 border-indigo-300/30"
-                        onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                        disabled={loading.submitting}
+                        className="bg-indigo-800/30 text-indigo-100 border-indigo-500/30"
+                        onClick={() => setIsEditing(true)}
                       >
-                        Następne
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                        Edytuj odpowiedź
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSubmitAnswer}
+                        disabled={loading.submitting || textareaEmpty}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      >
+                        {loading.submitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Zapisywanie...
+                          </>
+                        ) : (
+                          <>Zapisz odpowiedź</>
+                        )}
                       </Button>
                     )}
-                    
+
                     <Button
-                      onClick={handleSubmitAnswer}
-                      disabled={textareaEmpty || loading.submitting || isCurrentQuestionAnswered}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      variant="ghost"
+                      className="text-indigo-300 hover:text-indigo-100 hover:bg-indigo-800/50"
+                      onClick={() => {
+                        if (currentQuestionIndex < profileQuestions.length - 1) {
+                          setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === profileQuestions.length - 1 || loading.submitting}
                     >
-                      {loading.submitting ? (
-                        <>Zapisywanie</>
-                      ) : isCurrentQuestionAnswered ? (
-                        <>Odpowiedziano</>
-                      ) : (
-                        <>Zapisz odpowiedź</>
-                      )}
+                      Następne
+                      <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 </div>
@@ -384,10 +297,10 @@ export default function QuestionsPage() {
         )}
       </AnimatePresence>
       
-      {/* Navigation dots */}
+      {/* Question navigation dots */}
       {profileQuestions.length > 0 && (
         <div className="flex justify-center mt-6 space-x-2">
-          {profileQuestions.map((question, idx) => (
+          {profileQuestions.map((_, idx) => (
             <button
               key={idx}
               onClick={() => {
@@ -396,11 +309,11 @@ export default function QuestionsPage() {
               className={`w-3 h-3 rounded-full transition-all ${
                 idx === currentQuestionIndex
                   ? "bg-indigo-400 scale-125"
-                  : isQuestionAnswered(question.id)
-                  ? "bg-indigo-600"
+                  : isQuestionAnswered(profileQuestions[idx].id)
+                  ? "bg-emerald-600"
                   : "bg-indigo-900"
               }`}
-              aria-label={`Przejdź do pytania ${idx + 1}`}
+              aria-label={`Question ${idx + 1}`}
             />
           ))}
         </div>
@@ -410,20 +323,14 @@ export default function QuestionsPage() {
       <AnimatePresence>
         {showReward && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 1.2, opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center z-50 bg-black/40"
           >
             <motion.div
               className="bg-indigo-900/80 backdrop-blur-md border border-indigo-400/40 rounded-xl p-8 text-center shadow-xl"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ 
-                scale: 1, 
-                opacity: 1,
-                y: [0, -10, 0],
-              }}
-              transition={{ y: { repeat: 3, duration: 0.5 } }}
+              animate={{ y: [0, -10, 0], transition: { repeat: 3, duration: 0.5 } }}
             >
               <motion.div
                 animate={{ rotate: 360 }}
@@ -432,8 +339,8 @@ export default function QuestionsPage() {
               >
                 <Award className="h-12 w-12 text-yellow-300" />
               </motion.div>
-              <h2 className="text-2xl font-bold text-white mb-2">Dziękujemy!</h2>
-              <p className="text-indigo-200 mb-4">Twoja odpowiedź została zapisana</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Brawo!</h2>
+              <p className="text-indigo-200 mb-4">Twoja odpowiedź została zapisana!</p>
               <div className="text-yellow-300 text-3xl font-bold flex items-center justify-center">
                 +{earnedCredits} <Star className="h-5 w-5 ml-2" />
               </div>
@@ -441,6 +348,13 @@ export default function QuestionsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Custom styles */}
+      <style jsx global>{`
+        .mystical-glow {
+          text-shadow: 0 0 10px rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+      `}</style>
     </div>
   );
 }

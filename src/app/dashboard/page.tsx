@@ -105,18 +105,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <p className="text-xs text-indigo-200 italic">
-                  {zodiacSign.name === 'Baran' && 'Odważny i energiczny pionier, zawsze gotowy do działania.'}
-                  {zodiacSign.name === 'Byk' && 'Lojalny i praktyczny, ceni stabilność i piękno w życiu.'}
-                  {zodiacSign.name === 'Bliźnięta' && 'Wszechstronny i ciekawy, uwielbia nowe doświadczenia i wiedzę.'}
-                  {zodiacSign.name === 'Rak' && 'Uczuciowy i opiekuńczy, troszczy się o bliskich i dom.'}
-                  {zodiacSign.name === 'Lew' && 'Charyzmatyczny i dumny, promieniuje pewnością siebie.'}
-                  {zodiacSign.name === 'Panna' && 'Analityczny i dokładny, dąży do doskonałości we wszystkim.'}
-                  {zodiacSign.name === 'Waga' && 'Dyplomatyczny i harmonijny, zawsze szuka równowagi.'}
-                  {zodiacSign.name === 'Skorpion' && 'Intensywny i pełen pasji, potrafi przeniknąć do sedna spraw.'}
-                  {zodiacSign.name === 'Strzelec' && 'Optymistyczny i wolny duch, poszukujący prawdy i przygód.'}
-                  {zodiacSign.name === 'Koziorożec' && 'Ambitny i odpowiedzialny, cierpliwie dąży do swoich celów.'}
-                  {zodiacSign.name === 'Wodnik' && 'Oryginalny i niezależny, wizjoner wyprzedzający swoje czasy.'}
-                  {zodiacSign.name === 'Ryby' && 'Wrażliwy i intuicyjny, połączony z wyższymi wymiarami.'}
+                  {zodiacSign.description}
                 </p>
               </div>
             )}
@@ -166,7 +155,7 @@ export default function Dashboard() {
           <CardContent className="flex-grow">
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-indigo-200">Odpowiedziane pytania:</span>
+                <span className="text-sm text-indigo-200">Pytania, na które udzielono odpowiedź:</span>
                 <span className="text-sm font-semibold">
                   {questionsStats.answeredQuestions} / {questionsStats.totalQuestions}
                 </span>

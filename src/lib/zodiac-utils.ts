@@ -8,6 +8,7 @@ export interface ZodiacInfo {
   element: string;   // Element (Ogień, Ziemia, Powietrze, Woda)
   startDate: string; // format MM-DD
   endDate: string;   // format MM-DD
+  description: string; // Opis znaku zodiaku
 }
 
 // Definicje znaków zodiaku
@@ -18,7 +19,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♈',
     element: 'Ogień',
     startDate: '03-21',
-    endDate: '04-19'
+    endDate: '04-19',
+    description: 'Odważny i energiczny pionier, zawsze gotowy do działania.'
   },
   {
     id: "2",
@@ -26,7 +28,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♉',
     element: 'Ziemia',
     startDate: '04-20',
-    endDate: '05-20'
+    endDate: '05-20',
+    description: 'Lojalny i praktyczny, ceni stabilność i piękno w życiu.'
   },
   {
     id: "3",
@@ -34,7 +37,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♊',
     element: 'Powietrze',
     startDate: '05-21',
-    endDate: '06-20'
+    endDate: '06-20',
+    description: 'Wszechstronny i ciekawy, uwielbia nowe doświadczenia i wiedzę.'
   },
   {
     id: "4",
@@ -42,7 +46,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♋',
     element: 'Woda',
     startDate: '06-21',
-    endDate: '07-22'
+    endDate: '07-22',
+    description: 'Uczuciowy i opiekuńczy, troszczy się o bliskich i dom.'
   },
   {
     id: "5",
@@ -50,7 +55,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♌',
     element: 'Ogień',
     startDate: '07-23',
-    endDate: '08-22'
+    endDate: '08-22',
+    description: 'Charyzmatyczny i dumny, promieniuje pewnością siebie.'
   },
   {
     id: "6",
@@ -58,7 +64,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♍',
     element: 'Ziemia',
     startDate: '08-23',
-    endDate: '09-22'
+    endDate: '09-22',
+    description: 'Analityczny i dokładny, dąży do doskonałości we wszystkim.'
   },
   {
     id: "7",
@@ -66,7 +73,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♎',
     element: 'Powietrze',
     startDate: '09-23',
-    endDate: '10-22'
+    endDate: '10-22',
+    description: 'Dyplomatyczny i harmonijny, zawsze szuka równowagi.'
   },
   {
     id: "8",
@@ -74,7 +82,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♏',
     element: 'Woda',
     startDate: '10-23',
-    endDate: '11-21'
+    endDate: '11-21',
+    description: 'Intensywny i pełen pasji, potrafi przeniknąć do sedna spraw.'
   },
   {
     id: "9",
@@ -82,7 +91,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♐',
     element: 'Ogień',
     startDate: '11-22',
-    endDate: '12-21'
+    endDate: '12-21',
+    description: 'Optymistyczny i wolny duch, poszukujący prawdy i przygód.'
   },
   {
     id: "10",
@@ -90,7 +100,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♑',
     element: 'Ziemia',
     startDate: '12-22',
-    endDate: '01-19'
+    endDate: '01-19',
+    description: 'Ambitny i odpowiedzialny, cierpliwie dąży do swoich celów.'
   },
   {
     id: "11",
@@ -98,7 +109,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♒',
     element: 'Powietrze',
     startDate: '01-20',
-    endDate: '02-18'
+    endDate: '02-18',
+    description: 'Oryginalny i niezależny, wizjoner wyprzedzający swoje czasy.'
   },
   {
     id: "12",
@@ -106,7 +118,8 @@ export const ZODIAC_SIGNS: ZodiacInfo[] = [
     symbol: '♓',
     element: 'Woda',
     startDate: '02-19',
-    endDate: '03-20'
+    endDate: '03-20',
+    description: 'Wrażliwy i intuicyjny, połączony z wyższymi wymiarami.'
   }
 ];
 
