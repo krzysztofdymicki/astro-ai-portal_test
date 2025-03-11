@@ -86,7 +86,7 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-indigo-100 italic mb-4">
-                "Początkowo byłam sceptyczna, ale horoskopy od Twojej Przepowiedni okazały się zdumiewająco trafne! Przewidziały ważne zmiany w moim życiu zawodowym, które rzeczywiście nastąpiły miesiąc później. Jestem pod ogromnym wrażeniem!"
+              &ldquo;Początkowo byłam sceptyczna, ale horoskopy od Twojej Przepowiedni okazały się zdumiewająco trafne! Przewidziały ważne zmiany w moim życiu zawodowym, które rzeczywiście nastąpiły miesiąc później. Jestem pod ogromnym wrażeniem!&rdquo;
               </p>
               <p className="text-indigo-300 font-semibold">- Anna K., Warszawa</p>
             </div>
@@ -98,7 +98,7 @@ export default function HomePage() {
                 ))}
               </div>
               <p className="text-indigo-100 italic mb-4">
-                "To co najbardziej cenię w Twojej Przepowiedni to personalizacja. Nie są to ogólnikowe horoskopy, jakie czytałem wcześniej, ale naprawdę dopasowane do mojej sytuacji życiowej. Polecam każdemu, kto szuka prawdziwego wglądu!"
+              &ldquo;To co najbardziej cenię w Twojej Przepowiedni to personalizacja. Nie są to ogólnikowe horoskopy, jakie czytałem wcześniej, ale naprawdę dopasowane do mojej sytuacji życiowej. Polecam każdemu, kto szuka prawdziwego wglądu!&rdquo;
               </p>
               <p className="text-indigo-300 font-semibold">- Marek W., Kraków</p>
             </div>

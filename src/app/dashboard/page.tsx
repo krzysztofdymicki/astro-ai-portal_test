@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   User, 
@@ -260,10 +259,10 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Cytat motywacyjny */}
+      {/* Cytat motywacyjny - fixed quotes */}
       <div className="mt-10 text-center py-4" data-testid="quote-container">
         <p className="text-indigo-200 italic text-light" data-testid="quote-text">
-          "Gwiazdy nie determinują Twojego przeznaczenia. One jedynie oświetlają ścieżkę, którą możesz podążać."
+          &ldquo;Gwiazdy nie determinują Twojego przeznaczenia. One jedynie oświetlają ścieżkę, którą możesz podążać.&rdquo;
         </p>
         <p className="text-indigo-300 text-sm mt-1" data-testid="quote-author">― Starożytna mądrość astrologiczna</p>
       </div>

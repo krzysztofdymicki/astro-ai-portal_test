@@ -6,15 +6,16 @@ import RootLayout from '../app/layout';
 
 // Deklaracja interfejsu dla rozszerzonych opcji renderowania
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'wrapper'> {
-  // Tutaj możemy dodać dodatkowe opcje, np. wstępny stan komponentu
-  initialState?: any;
+  // Using Record<string, unknown> instead of any
+  initialState?: Record<string, unknown>;
   route?: string;
 }
 
 // Funkcja pomocnicza do renderowania komponentów (będzie rozszerzana w przyszłości)
 export function renderWithProviders(
   ui: ReactElement,
-  { initialState, route = '/', ...renderOptions }: ExtendedRenderOptions = {}
+  // Fixing unused params by removing them from destructuring but keeping in interface for future use
+  { ...renderOptions }: ExtendedRenderOptions = {}
 ) {
   // Funkcja do opakowywania komponentów w niezbędne providery (np. AuthProvider, ThemeProvider, itp.)
   function Wrapper({ children }: { children: React.ReactNode }) {

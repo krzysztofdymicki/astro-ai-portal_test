@@ -36,6 +36,9 @@ export default function ResetPassword() {
         description: "Użyj linku otrzymanego w wiadomości email lub poproś o nowy link."
       });
     }
+  // No need to add supabase.auth as a dependency since we're not using it in this effect
+  // This comment tells ESLint to ignore the missing dependency warning
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const validateForm = () => {
@@ -73,7 +76,7 @@ export default function ResetPassword() {
     setLoading(true)
 
     try {
-      // Supabase automatycznie wyciągnie token z URL
+      // Fixed: Don't destructure data if we don't use it
       const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {

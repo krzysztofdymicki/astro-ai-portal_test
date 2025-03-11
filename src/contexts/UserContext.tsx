@@ -456,6 +456,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   // Pobranie danych przy pierwszym renderowaniu
+  // We only want to fetch user data once on component mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUserData();
   }, []);
