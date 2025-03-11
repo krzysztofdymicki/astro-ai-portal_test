@@ -206,64 +206,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setCredits(creditsData);
       }
       
-      // Pobranie pytań profilowych
-      await fetchProfileQuestions();
+      // Pobierz pytania (poczekaj na zakończenie)
+      const { data: questions, error: questionsError } = await supabase
+        .from('profile_questions')
+        .select('*, question_categories(name, icon)')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+        
+      if (questionsError) throw questionsError;
       
-      // Pobranie odpowiedzi użytkownika
-      await fetchUserAnswers(userId);
+      // Pobierz odpowiedzi (poczekaj na zakończenie)
+      const { data: answers, error: answersError } = await supabase
+        .from('profile_answers')
+        .select('*')
+        .eq('user_id', userId);
+        
+      if (answersError) throw answersError;
+      
+      // Zaktualizuj stany jednocześnie
+      if (questions) setProfileQuestions(questions);
+      if (answers) setProfileAnswers(answers);
+      
+      // Oblicz statystyki na podstawie pobranych danych
+      if (questions && answers) {
+        updateQuestionsStats(questions, answers);
+      }
       
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Nie udało się pobrać danych użytkownika');
     } finally {
       setLoading(prev => ({ ...prev, initial: false }));
-    }
-  };
-  
-  // Pobranie pytań profilowych
-  const fetchProfileQuestions = async () => {
-    setLoading(prev => ({ ...prev, questions: true }));
-    try {
-      const { data, error } = await supabase
-        .from('profile_questions')
-        .select('*, question_categories(name, icon)')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
-        
-      if (error) throw error;
-      
-      if (data) {
-        setProfileQuestions(data);
-        updateQuestionsStats(data, profileAnswers);
-      }
-    } catch (error) {
-      console.error('Error fetching profile questions:', error);
-      toast.error('Nie udało się pobrać dodatkowych pytań');
-    } finally {
-      setLoading(prev => ({ ...prev, questions: false }));
-    }
-  };
-  
-  // Pobranie odpowiedzi użytkownika
-  const fetchUserAnswers = async (userId: string) => {
-    setLoading(prev => ({ ...prev, answers: true }));
-    try {
-      const { data, error } = await supabase
-        .from('profile_answers')
-        .select('*')
-        .eq('user_id', userId);
-        
-      if (error) throw error;
-      
-      if (data) {
-        setProfileAnswers(data);
-        updateQuestionsStats(profileQuestions, data);
-      }
-    } catch (error) {
-      console.error('Error fetching user answers:', error);
-      toast.error('Nie udało się pobrać odpowiedzi na pytania');
-    } finally {
-      setLoading(prev => ({ ...prev, answers: false }));
     }
   };
   
@@ -411,9 +384,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
           
           if (data) {
             // Aktualizacja lokalnej tablicy odpowiedzi
-            setProfileAnswers(prev => 
-              prev.map(a => a.id === data.id ? data : a)
-            );
+            const updatedAnswers = profileAnswers.map(a => a.id === data.id ? data : a);
+            setProfileAnswers(updatedAnswers);
+            
+            // Aktualizacja statystyk po zmianie odpowiedzi
+            updateQuestionsStats(profileQuestions, updatedAnswers);
             
             toast.success('Odpowiedź została zaktualizowana');
             return true;
