@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserProvider, useUser } from '@/contexts/UserContext';
+import LoadingScreen from '@/components/ui/loading-screen';
 import DebugContextPanel from '@/components/debug/DebugContextPanel';
 
 // DashboardHeader - komponent zawierający header z menu użytkownika
@@ -132,8 +133,13 @@ export default function DashboardLayout({
 
 // Komponent wewnętrzny, który będzie miał dostęp do UserProvider
 function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { loading } = useUser();
+  
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Ekran ładowania - pokazywany tylko przy początkowym ładowaniu danych */}
+      <LoadingScreen show={loading.initial} minDuration={1500} />
+      
       <DashboardHeader />
       
       <main className="flex-grow p-4 sm:p-6 bg-gradient-to-b from-indigo-950/20 to-indigo-900/10">
