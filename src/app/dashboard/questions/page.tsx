@@ -26,7 +26,8 @@ export default function QuestionsPage() {
     questionsStats, 
     submitProfileAnswer, 
     isQuestionAnswered, 
-    getQuestionAnswer 
+    getQuestionAnswer,
+    zodiacSign
   } = useUser();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -86,25 +87,8 @@ export default function QuestionsPage() {
     ? isQuestionAnswered(currentQuestion.id)
     : false;
 
-  // Skategoryzowane pytania (jeśli dostępne)
-  const questionsByCategory = profileQuestions.reduce((acc, question) => {
-    // Sprawdź czy mamy dane kategorii
-    const categoryId = question.category_id || 'uncategorized';
-    const categoryName = question.question_categories?.name || 'Inne';
-    
-    // Inicjalizuj kategorię, jeśli jeszcze nie istnieje
-    if (!acc[categoryId]) {
-      acc[categoryId] = {
-        name: categoryName,
-        icon: question.question_categories?.icon || 'help-circle',
-        questions: []
-      };
-    }
-    
-    // Dodaj pytanie do kategorii
-    acc[categoryId].questions.push(question);
-    return acc;
-  }, {});
+  // Do kategoryzacji pytań używamy tylko istniejących kategorii zdefiniowanych przez administratora
+  // Nie pozwalamy na tworzenie nowych kategorii przez użytkowników
 
   return (
     <div className="space-y-6 py-4" data-testid="questions-page-container">
@@ -119,9 +103,20 @@ export default function QuestionsPage() {
           Powrót do Panelu
         </Link>
         
-        <div className="flex items-center bg-indigo-900/60 px-4 py-2 rounded-full">
-          <Star className="h-5 w-5 text-yellow-300 mr-2" />
-          <span className="text-white font-medium">Kredyty: {credits?.balance || 0}</span>
+        <div className="flex items-center gap-4">
+          {/* Znak zodiaku użytkownika */}
+          {zodiacSign && (
+            <div className="flex items-center bg-indigo-900/60 px-4 py-2 rounded-full">
+              <span className="text-xl mr-2">{zodiacSign.symbol}</span>
+              <span className="text-white font-medium">{zodiacSign.name}</span>
+            </div>
+          )}
+          
+          {/* Kredyty */}
+          <div className="flex items-center bg-indigo-900/60 px-4 py-2 rounded-full">
+            <Star className="h-5 w-5 text-yellow-300 mr-2" />
+            <span className="text-white font-medium">Kredyty: {credits?.balance || 0}</span>
+          </div>
         </div>
       </div>
       

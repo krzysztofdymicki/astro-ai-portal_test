@@ -15,12 +15,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { RELATIONSHIP_STATUS_OPTIONS } from '@/types/profile';
-import { getZodiacSignFromDate, isDateCompleteForZodiac } from '@/lib/zodiac-utils';
 import {
   Select,
   SelectContent,
@@ -31,7 +30,7 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { profile, loading, updateProfile, refreshUserData } = useUser();
+  const { profile, loading, updateProfile, refreshUserData, zodiacSign } = useUser();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -40,15 +39,12 @@ export default function ProfilePage() {
     birth_location: '',
     current_location: '',
     relationship_status: '',
-    zodiac_sign_id: '',
+    zodiac_sign: '',
   });
   const [isSaving, setIsSaving] = useState(false);
   
   // Dodajemy key do wymuszenia pełnego przeładowania komponentu
   const [selectKey, setSelectKey] = useState(Date.now());
-
-  // Stan dla znaku zodiaku
-  const [zodiacSign, setZodiacSign] = useState<{name: string, symbol: string} | null>(null);
 
   // Aktualizuj formularz gdy dane profilu się zmienią
   useEffect(() => {
@@ -61,22 +57,11 @@ export default function ProfilePage() {
         birth_location: profile.birth_location || '',
         current_location: profile.current_location || '',
         relationship_status: profile.relationship_status || '',
-        zodiac_sign_id: profile.zodiac_sign_id || '',
+        zodiac_sign: profile.zodiac_sign || '', 
       });
       
       // Wymuszenie przeładowania komponentu Select
       setSelectKey(Date.now());
-      
-      // Jeśli data urodzenia jest określona, spróbuj określić znak zodiaku
-      if (profile.birth_date && isDateCompleteForZodiac(profile.birth_date)) {
-        const sign = getZodiacSignFromDate(profile.birth_date);
-        if (sign) {
-          setZodiacSign({
-            name: sign.name,
-            symbol: sign.symbol
-          });
-        }
-      }
     }
   }, [profile]);
 
@@ -84,26 +69,6 @@ export default function ProfilePage() {
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Automatyczne określanie znaku zodiaku na podstawie daty urodzenia
-    if (name === 'birth_date' && value && isDateCompleteForZodiac(value)) {
-      try {
-        // Lokalnie określ znak zodiaku na potrzeby UI
-        const localZodiacSign = getZodiacSignFromDate(value);
-        if (localZodiacSign) {
-          setZodiacSign({
-            name: localZodiacSign.name,
-            symbol: localZodiacSign.symbol
-          });
-        }
-      } catch (error) {
-        console.error('Error determining zodiac sign:', error);
-        setZodiacSign(null);
-      }
-    } else if (name === 'birth_date' && (!value || !isDateCompleteForZodiac(value))) {
-      // Jeśli data jest niepełna, zresetuj znak zodiaku
-      setZodiacSign(null);
-    }
   };
 
   // Obsługa zmiany dla pola select

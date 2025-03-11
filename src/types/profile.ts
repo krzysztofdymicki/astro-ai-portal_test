@@ -10,25 +10,13 @@ export interface Profile {
   birth_location: string | null;
   current_location: string | null;
   relationship_status: string | null;
-  zodiac_sign_id: string | null;
+  zodiac_sign: string | null;                // Zmieniono z zodiac_sign_id na zodiac_sign
   profile_completion_percentage: number;
-  answered_questions_count: number;   // Nowe pole - liczba odpowiedzianych pytań
-  total_questions_count: number;      // Nowe pole - całkowita liczba pytań
   created_at: string;
   updated_at: string;
 }
 
-// Znak zodiaku
-export interface ZodiacSign {
-  id: string;
-  name: string;
-  symbol: string;
-  element: string;
-  start_date: string;
-  end_date: string;
-}
-
-// Kategoria pytań (nowa)
+// Kategoria pytań
 export interface QuestionCategory {
   id: string;
   name: string;
@@ -37,15 +25,15 @@ export interface QuestionCategory {
   display_order: number;
 }
 
-// Pytanie profilowe (zaktualizowane)
+// Pytanie profilowe
 export interface ProfileQuestion {
   id: string;
   question: string;
   credits_reward: number;
   is_active: boolean;
-  category_id: string | null;              // Nowe pole
-  display_order: number;                   // Nowe pole
-  short_description: string | null;        // Nowe pole
+  category_id: string | null;              
+  display_order: number;                   
+  short_description: string | null;        
   question_categories?: QuestionCategory;  // Relacja do kategorii
 }
 
@@ -76,21 +64,13 @@ export interface CreditTransaction {
   created_at: string;
 }
 
-// Statystyki pytań (nowe)
+// Statystyki pytań
 export interface QuestionsStats {
   totalQuestions: number;
   answeredQuestions: number;
   completionPercentage: number;
   earnedCredits: number;
   remainingCredits: number;
-}
-
-// Typy horoskopów
-export interface HoroscopeType {
-  id: string;
-  name: string;
-  duration: string;
-  description: string | null;
 }
 
 // Typy stanów związków

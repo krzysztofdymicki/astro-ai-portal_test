@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
+import { getZodiacSignById, getZodiacSignFromDate, isDateCompleteForZodiac, ZodiacInfo } from '@/lib/zodiac-utils';
 
 // Definicja interfejsu profilu
 export interface UserProfile {
@@ -14,7 +15,7 @@ export interface UserProfile {
   birth_location: string | null;
   current_location: string | null;
   relationship_status: string | null;
-  zodiac_sign_id: string | null;
+  zodiac_sign: string | null;  // Zmieniono z zodiac_sign_id na zodiac_sign
   profile_completion_percentage: number;
   created_at: string;
   updated_at: string;
@@ -32,6 +33,13 @@ export interface ProfileQuestion {
   question: string;
   credits_reward: number;
   is_active: boolean;
+  category_id?: string | null;
+  display_order?: number;
+  short_description?: string | null;
+  question_categories?: {
+    name: string;
+    icon: string | null;
+  } | null;
 }
 
 // Interfejs dla odpowiedzi użytkownika
@@ -52,7 +60,6 @@ interface LoadingState {
   submitting: boolean;
 }
 
-// Definicja kontekstu użytkownika - z dodanymi kredytami
 // Statystyki pytań
 interface QuestionsStats {
   totalQuestions: number;
@@ -69,6 +76,9 @@ interface UserContextType {
   userName: string;
   userInitials: string;
   credits: UserCredits | null;
+  
+  // Informacje o znaku zodiaku
+  zodiacSign: ZodiacInfo | null;
   
   // Pytania i odpowiedzi
   profileQuestions: ProfileQuestion[];
@@ -110,6 +120,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [userName, setUserName] = useState('Użytkownik');
   const [userInitials, setUserInitials] = useState('U');
   const [credits, setCredits] = useState<UserCredits | null>(null);
+  
+  // Znak zodiaku użytkownika
+  const [zodiacSign, setZodiacSign] = useState<ZodiacInfo | null>(null);
   
   // Pytania i odpowiedzi
   const [profileQuestions, setProfileQuestions] = useState<ProfileQuestion[]>([]);
@@ -166,6 +179,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
           }
           setUserInitials(initials);
         }
+        
+        // Ustawienie znaku zodiaku z nowego pola zodiac_sign
+        if (profileData.zodiac_sign) {
+          const signInfo = getZodiacSignById(profileData.zodiac_sign);
+          setZodiacSign(signInfo);
+        } else if (profileData.birth_date && isDateCompleteForZodiac(profileData.birth_date)) {
+          // Jeśli nie ma przypisanego znaku zodiaku, ale jest data urodzenia, określamy go na jej podstawie
+          const signFromDate = getZodiacSignFromDate(profileData.birth_date);
+          setZodiacSign(signFromDate);
+        }
       }
 
       // Pobranie kredytów użytkownika
@@ -194,22 +217,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       toast.error('Nie udało się pobrać danych użytkownika');
     } finally {
       setLoading(prev => ({ ...prev, initial: false }));
-    }
-  };
-  
-  // Pobranie znaków zodiaku
-  const fetchZodiacSigns = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('zodiac_signs')
-        .select('*');
-        
-      if (error) throw error;
-      
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching zodiac signs:', error);
-      return [];
     }
   };
   
@@ -297,6 +304,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
       
       setLoading(prev => ({ ...prev, profile: true }));
       
+      // Jeśli zmieniamy datę urodzenia, sprawdźmy czy możemy określić znak zodiaku
+      if (newProfileData.birth_date && isDateCompleteForZodiac(newProfileData.birth_date)) {
+        const zodiacSignInfo = getZodiacSignFromDate(newProfileData.birth_date);
+        if (zodiacSignInfo) {
+          // Aktualizacja pola zodiac_sign na podstawie daty urodzenia
+          newProfileData.zodiac_sign = zodiacSignInfo.id;
+        }
+      }
+      
       // Aktualizacja danych w bazie
       const { data, error } = await supabase
         .from('profiles')
@@ -323,6 +339,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
           }
           setUserInitials(initials);
         }
+        
+        // Aktualizacja znaku zodiaku, jeśli się zmienił
+        if (data.zodiac_sign) {
+          const signInfo = getZodiacSignById(data.zodiac_sign);
+          setZodiacSign(signInfo);
+        } else if (data.birth_date && isDateCompleteForZodiac(data.birth_date)) {
+          const signFromDate = getZodiacSignFromDate(data.birth_date);
+          setZodiacSign(signFromDate);
+        } else {
+          setZodiacSign(null);
+        }
       }
       
       toast.success('Profil został zaktualizowany');
@@ -345,8 +372,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const answer = profileAnswers.find(a => a.question_id === questionId);
     return answer ? answer.answer : null;
   };
-  
-  // Usunięto funkcję getZodiacSignFromDate, która została przeniesiona do zodiac-utils.ts
 
   // Dodanie odpowiedzi na pytanie profilowe
   const submitProfileAnswer = async (questionId: string, answer: string): Promise<boolean> => {
@@ -467,6 +492,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     userName,
     userInitials,
     credits,
+    zodiacSign,
     profileQuestions,
     profileAnswers,
     questionsStats,
