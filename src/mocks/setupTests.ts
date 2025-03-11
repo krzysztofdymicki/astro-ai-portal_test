@@ -1,6 +1,6 @@
 // src/setupTests.ts
 import '@testing-library/jest-dom';
-import { server } from './mocks/server';
+import { server } from './server';
 
 // Konfiguracja i czyszczenie MSW przed/po testach
 beforeAll(() => {
