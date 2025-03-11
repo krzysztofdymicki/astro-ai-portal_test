@@ -7,6 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Bug, X, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 
+// Define a type for the data that can be formatted
+// FormattableData = 
+//  | string
+//  | number
+//  | boolean
+//  | null
+//  | undefined
+//  | FormattableData[]
+//  | Record<string, FormattableData>;
+
 /**
  * Komponent do debugowania stanu kontekstu
  * Wyświetla aktualny stan wszystkich danych z UserContext w prawym dolnym rogu ekranu
@@ -27,7 +37,7 @@ export default function DebugContextPanel() {
   }, []);
 
   // Funkcja formatująca dane do wyświetlenia
-  const formatData = (data: any, level = 0): React.ReactNode => {
+  const formatData = (data: unknown, level = 0): React.ReactNode => {
     if (data === null || data === undefined) {
       return <span className="text-gray-400">null</span>;
     }
@@ -42,9 +52,9 @@ export default function DebugContextPanel() {
     
     if (typeof data === 'string') {
       if (data.length === 0) {
-        return <span className="text-gray-400">""</span>;
+        return <span className="text-gray-400">{`""`}</span>;
       }
-      return <span className="text-green-300">"{data}"</span>;
+      return <span className="text-green-300">{`"${data}"`}</span>;
     }
     
     if (Array.isArray(data)) {
@@ -67,7 +77,7 @@ export default function DebugContextPanel() {
     }
     
     if (typeof data === 'object') {
-      const entries = Object.entries(data);
+      const entries = Object.entries(data as Record<string, unknown>);
       if (entries.length === 0) {
         return <span className="text-gray-400">{'{}'}</span>;
       }
@@ -205,7 +215,7 @@ export default function DebugContextPanel() {
             
             <div className="text-indigo-300">Loading:</div>
             <div className="text-white">
-              {Object.entries(loading).filter(([_, val]) => val).map(([key]) => key).join(', ') || 'none'}
+              {Object.entries(loading).filter(([, val]) => val).map(([key]) => key).join(', ') || 'none'}
             </div>
           </div>
         </div>

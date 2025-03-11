@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
 
     try {
       // Supabase automatycznie wyciągnie token z URL i zweryfikuje go
-      const { data, error } = await supabase.auth.updateUser({ password })
+      const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {
         toast.error("Błąd resetowania hasła", {
