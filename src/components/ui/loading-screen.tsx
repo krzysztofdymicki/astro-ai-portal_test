@@ -73,7 +73,7 @@ export default function LoadingScreen({ show, minDuration = 1000 }: LoadingScree
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
         >
-          Ładowanie twojej przepowiedni...
+          Czytam gwiazdy...
         </motion.div>
       </div>
     </div>
