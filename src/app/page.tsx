@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Star, Shield, Clock, Users, ArrowRight } from 'lucide-react';
+import { Star, Shield, Clock, Users, ArrowRight, User } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -25,6 +25,14 @@ export default function HomePage() {
             </Link>
             <Link href="/register" className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all" data-testid="register-button">
               Zarejestruj się
+            </Link>
+          </div>
+          
+          <div className="mt-6">
+            <Link href="/astrologers" className="text-indigo-300 hover:text-indigo-200 transition-colors flex items-center justify-center gap-2">
+              <User className="h-4 w-4" />
+              Poznaj naszych astrologów
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -68,6 +76,27 @@ export default function HomePage() {
               <p className="text-indigo-200">trafność</p>
             </div>
           </div>
+        </div>
+      </section>
+      
+      {/* Sekcja astrologów */}
+      <section className="py-16 px-4 bg-indigo-900/20" data-testid="astrologers-section">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl text-white text-center mystical-glow mb-6" data-testid="astrologers-heading">
+            Nasi doświadczeni astrologowie
+          </h2>
+          <p className="text-indigo-200 mb-8 max-w-2xl mx-auto">
+            Wybierz spośród naszych wykwalifikowanych astrologów i ekspertów duchowych, 
+            którzy pomogą Ci odnaleźć właściwą ścieżkę.
+          </p>
+          <Link 
+            href="/astrologers" 
+            className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical inline-flex items-center hover:shadow-mystical-hover transition-all"
+            data-testid="view-astrologers-button"
+          >
+            <User className="h-5 w-5 mr-2" />
+            Zobacz astrologów
+          </Link>
         </div>
       </section>
       
