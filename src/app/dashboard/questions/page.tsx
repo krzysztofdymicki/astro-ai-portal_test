@@ -87,9 +87,6 @@ export default function QuestionsPage() {
     ? isQuestionAnswered(currentQuestion.id)
     : false;
 
-  // Do kategoryzacji pytań używamy tylko istniejących kategorii zdefiniowanych przez administratora
-  // Nie pozwalamy na tworzenie nowych kategorii przez użytkowników
-
   return (
     <div className="space-y-6 py-4" data-testid="questions-page-container">
       {/* Header section */}
@@ -208,7 +205,7 @@ export default function QuestionsPage() {
               <CardContent>
                 <div className="space-y-6">
                   <div className="text-lg text-white font-medium">
-                    {currentQuestion?.question || currentQuestion?.question}
+                    {currentQuestion?.question}
                   </div>
                   
                   <div className="pt-2">
@@ -234,26 +231,14 @@ export default function QuestionsPage() {
               </CardContent>
               
               <CardFooter>
-                <div className="flex justify-between w-full">
-                  <Button
-                    variant="ghost"
-                    className="text-indigo-300 hover:text-indigo-100 hover:bg-indigo-800/50"
-                    onClick={() => {
-                      if (currentQuestionIndex > 0) {
-                        setCurrentQuestionIndex(currentQuestionIndex - 1);
-                      }
-                    }}
-                    disabled={currentQuestionIndex === 0 || loading.submitting}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Poprzednie
-                  </Button>
-                  
-                  <div className="flex gap-2">
+                {/* Układ przycisków z dostosowaniem do małych ekranów - dwie linie */}
+                <div className="w-full flex flex-col space-y-3">
+                  {/* Górna linia - przycisk Edytuj/Zapisz */}
+                  <div className="flex justify-center">
                     {isCurrentQuestionAnswered && !isEditing ? (
                       <Button
                         variant="outline"
-                        className="bg-indigo-800/30 text-indigo-100 border-indigo-500/30"
+                        className="bg-indigo-800/30 text-indigo-100 border-indigo-500/30 w-full sm:w-auto"
                         onClick={() => setIsEditing(true)}
                       >
                         Edytuj odpowiedź
@@ -262,7 +247,7 @@ export default function QuestionsPage() {
                       <Button
                         onClick={handleSubmitAnswer}
                         disabled={loading.submitting || textareaEmpty}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white w-full sm:w-auto"
                       >
                         {loading.submitting ? (
                           <>
@@ -274,7 +259,24 @@ export default function QuestionsPage() {
                         )}
                       </Button>
                     )}
-
+                  </div>
+                  
+                  {/* Dolna linia - przyciski nawigacji */}
+                  <div className="flex justify-between">
+                    <Button
+                      variant="ghost"
+                      className="text-indigo-300 hover:text-indigo-100 hover:bg-indigo-800/50"
+                      onClick={() => {
+                        if (currentQuestionIndex > 0) {
+                          setCurrentQuestionIndex(currentQuestionIndex - 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === 0 || loading.submitting}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Poprzednie
+                    </Button>
+                    
                     <Button
                       variant="ghost"
                       className="text-indigo-300 hover:text-indigo-100 hover:bg-indigo-800/50"

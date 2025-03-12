@@ -54,7 +54,9 @@ function DashboardHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-2xl text-white text-light mystical-glow">Twoja Przepowiednia</span>
+            <Link href="/dashboard" className="text-2xl text-white text-light mystical-glow hover:opacity-80 transition-opacity">
+              Twoja Przepowiednia
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             {/* Dropdown menu użytkownika */}

@@ -15,35 +15,26 @@ export interface UserProfile {
   birth_location: string | null;
   current_location: string | null;
   relationship_status: string | null;
-  zodiac_sign: string | null;  // Zmieniono z zodiac_sign_id na zodiac_sign
+  zodiac_sign: string | null;
   profile_completion_percentage: number;
   created_at: string;
   updated_at: string;
 }
 
-// Dodajemy interfejs dla kredytów
+// Interfejs dla kredytów
 export interface UserCredits {
   balance: number;
   last_updated?: string;
 }
 
-// Interfejs dla pytań profilowych
-export interface ProfileQuestion {
-  id: string;
-  question: string;
-  credits_reward: number;
-  is_active: boolean;
-  category_id?: string | null;
-  display_order?: number;
-  short_description?: string | null;
-  question_categories?: {
-    name: string;
-    icon: string | null;
-  } | null;
+// Interfejs dla kategorii pytań
+interface QuestionCategory {
+  name: string;
+  icon: string | null;
 }
 
-// Interfejs dla odpowiedzi użytkownika
-export interface ProfileAnswer {
+// Interfejs dla odpowiedzi
+interface ProfileAnswer {
   id: string;
   user_id: string;
   question_id: string;
@@ -51,12 +42,26 @@ export interface ProfileAnswer {
   answered_at: string;
 }
 
+// Rozszerzony interfejs pytania z zintegrowaną odpowiedzią
+export interface ProfileQuestionWithAnswer {
+  id: string;
+  question: string;
+  credits_reward: number;
+  is_active: boolean;
+  category_id?: string | null;
+  display_order?: number;
+  short_description?: string | null;
+  question_categories?: QuestionCategory | null;
+  
+  // Zintegrowana odpowiedź (opcjonalnie, dla pytań bez odpowiedzi)
+  answer: ProfileAnswer | null;
+}
+
 // Prosty interfejs stanu ładowania
 interface LoadingState {
   initial: boolean;
   profile: boolean;
   questions: boolean;
-  answers: boolean;
   submitting: boolean;
 }
 
@@ -80,9 +85,8 @@ interface UserContextType {
   // Informacje o znaku zodiaku
   zodiacSign: ZodiacInfo | null;
   
-  // Pytania i odpowiedzi
-  profileQuestions: ProfileQuestion[];
-  profileAnswers: ProfileAnswer[];
+  // Pytania z zintegrowanymi odpowiedziami
+  profileQuestions: ProfileQuestionWithAnswer[];
   
   // Statystyki pytań
   questionsStats: QuestionsStats;
@@ -110,7 +114,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     initial: true,
     profile: false,
     questions: false,
-    answers: false,
     submitting: false
   });
   
@@ -124,9 +127,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Znak zodiaku użytkownika
   const [zodiacSign, setZodiacSign] = useState<ZodiacInfo | null>(null);
   
-  // Pytania i odpowiedzi
-  const [profileQuestions, setProfileQuestions] = useState<ProfileQuestion[]>([]);
-  const [profileAnswers, setProfileAnswers] = useState<ProfileAnswer[]>([]);
+  // Pytania z zintegrowanymi odpowiedziami
+  const [profileQuestions, setProfileQuestions] = useState<ProfileQuestionWithAnswer[]>([]);
   
   // Statystyki pytań (domyślne wartości)
   const [questionsStats, setQuestionsStats] = useState<QuestionsStats>({
@@ -180,12 +182,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
           setUserInitials(initials);
         }
         
-        // Ustawienie znaku zodiaku z nowego pola zodiac_sign
+        // Ustawienie znaku zodiaku
         if (profileData.zodiac_sign) {
           const signInfo = getZodiacSignById(profileData.zodiac_sign);
           setZodiacSign(signInfo);
         } else if (profileData.birth_date && isDateCompleteForZodiac(profileData.birth_date)) {
-          // Jeśli nie ma przypisanego znaku zodiaku, ale jest data urodzenia, określamy go na jej podstawie
           const signFromDate = getZodiacSignFromDate(profileData.birth_date);
           setZodiacSign(signFromDate);
         }
@@ -206,57 +207,78 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setCredits(creditsData);
       }
       
-      // Pobierz pytania (poczekaj na zakończenie)
+      // Pobieranie pytań i odpowiedzi za pomocą jednego zapytania z LEFT JOIN
+      setLoading(prev => ({ ...prev, questions: true }));
+      
+      // Pobierz wszystkie aktywne pytania i ich ewentualne odpowiedzi dla danego użytkownika
+      // Supabase domyślnie używa LEFT JOIN, więc zwróci wszystkie pytania nawet bez odpowiedzi
       const { data: questions, error: questionsError } = await supabase
         .from('profile_questions')
-        .select('*, question_categories(name, icon)')
+        .select(`
+          *,
+          question_categories(name, icon),
+          profile_answers(*)
+        `)
         .eq('is_active', true)
+        .eq('profile_answers.user_id', userId)
         .order('display_order', { ascending: true });
         
       if (questionsError) throw questionsError;
       
-      // Pobierz odpowiedzi (poczekaj na zakończenie)
-      const { data: answers, error: answersError } = await supabase
-        .from('profile_answers')
-        .select('*')
-        .eq('user_id', userId);
+      if (!questions || questions.length === 0) {
+        setProfileQuestions([]);
+        setLoading(prev => ({ ...prev, questions: false }));
+        return;
+      }
+      
+      // Przekształć pobrane dane do naszego formatu
+      const questionsWithAnswers: ProfileQuestionWithAnswer[] = questions.map(question => {
+        // Pobierz odpowiedź użytkownika dla tego pytania (będzie w tablicy profile_answers)
+        const answerArray = question.profile_answers as unknown as ProfileAnswer[];
+        const answer = answerArray && answerArray.length > 0 ? answerArray[0] : null;
         
-      if (answersError) throw answersError;
+        // Usuń tablicę profile_answers i zastąp ją pojedynczym obiektem answer
+        const { profile_answers, ...questionData } = question;
+        
+        return {
+          ...questionData,
+          answer
+        };
+      });
       
-      // Zaktualizuj stany jednocześnie
-      if (questions) setProfileQuestions(questions);
-      if (answers) setProfileAnswers(answers);
+      setProfileQuestions(questionsWithAnswers);
+      updateQuestionsStats(questionsWithAnswers);
       
-      // Oblicz statystyki na podstawie pobranych danych
-      if (questions && answers) {
-        updateQuestionsStats(questions, answers);
+      setProfileQuestions(questionsWithAnswers);
+      
+      // Obliczenie statystyk
+      if (questionsWithAnswers.length > 0) {
+        updateQuestionsStats(questionsWithAnswers);
       }
       
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Nie udało się pobrać danych użytkownika');
     } finally {
-      setLoading(prev => ({ ...prev, initial: false }));
+      setLoading(prev => ({ ...prev, initial: false, questions: false }));
     }
   };
   
   // Aktualizacja statystyk pytań
-  const updateQuestionsStats = (questions: ProfileQuestion[], answers: ProfileAnswer[]) => {
+  const updateQuestionsStats = (questions: ProfileQuestionWithAnswer[]) => {
     if (!questions.length) return;
     
-    const answeredCount = answers.length;
+    const answeredQuestions = questions.filter(q => q.answer !== null);
+    const answeredCount = answeredQuestions.length;
     const totalQuestions = questions.length;
     const completionPercentage = Math.round((answeredCount / totalQuestions) * 100);
     
     // Obliczenie zdobytych kredytów
-    const answeredQuestionIds = new Set(answers.map(a => a.question_id));
-    const earnedCredits = questions
-      .filter(q => answeredQuestionIds.has(q.id))
-      .reduce((sum, q) => sum + q.credits_reward, 0);
+    const earnedCredits = answeredQuestions.reduce((sum, q) => sum + q.credits_reward, 0);
     
     // Obliczenie pozostałych do zdobycia kredytów
     const remainingCredits = questions
-      .filter(q => !answeredQuestionIds.has(q.id))
+      .filter(q => q.answer === null)
       .reduce((sum, q) => sum + q.credits_reward, 0);
     
     setQuestionsStats({
@@ -337,13 +359,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   
   // Sprawdzenie czy na pytanie już odpowiedziano
   const isQuestionAnswered = (questionId: string): boolean => {
-    return profileAnswers.some(answer => answer.question_id === questionId);
+    const question = profileQuestions.find(q => q.id === questionId);
+    return question?.answer !== null;
   };
   
   // Pobranie odpowiedzi na pytanie
   const getQuestionAnswer = (questionId: string): string | null => {
-    const answer = profileAnswers.find(a => a.question_id === questionId);
-    return answer ? answer.answer : null;
+    const question = profileQuestions.find(q => q.id === questionId);
+    return question?.answer?.answer || null;
   };
 
   // Dodanie odpowiedzi na pytanie profilowe
@@ -362,37 +385,39 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     try {
       // Sprawdzenie, czy pytanie istnieje
-      const question = profileQuestions.find(q => q.id === questionId);
-      if (!question) {
+      const questionIndex = profileQuestions.findIndex(q => q.id === questionId);
+      if (questionIndex === -1) {
         throw new Error('Pytanie nie istnieje');
       }
       
-      // Sprawdzenie, czy na pytanie już odpowiedziano
-      if (isQuestionAnswered(questionId)) {
+      const question = profileQuestions[questionIndex];
+      
+      if (question.answer) {
         // Aktualizacja istniejącej odpowiedzi
-        const existingAnswer = profileAnswers.find(a => a.question_id === questionId);
-        
-        if (existingAnswer) {
-          const { data, error } = await supabase
-            .from('profile_answers')
-            .update({ answer: answer.trim() })
-            .eq('id', existingAnswer.id)
-            .select()
-            .single();
-            
-          if (error) throw error;
+        const { data, error } = await supabase
+          .from('profile_answers')
+          .update({ answer: answer.trim() })
+          .eq('id', question.answer.id)
+          .select()
+          .single();
           
-          if (data) {
-            // Aktualizacja lokalnej tablicy odpowiedzi
-            const updatedAnswers = profileAnswers.map(a => a.id === data.id ? data : a);
-            setProfileAnswers(updatedAnswers);
-            
-            // Aktualizacja statystyk po zmianie odpowiedzi
-            updateQuestionsStats(profileQuestions, updatedAnswers);
-            
-            toast.success('Odpowiedź została zaktualizowana');
-            return true;
-          }
+        if (error) throw error;
+        
+        if (data) {
+          // Aktualizacja lokalnego stanu
+          const updatedQuestion = {
+            ...question,
+            answer: data
+          };
+          
+          const updatedQuestions = [...profileQuestions];
+          updatedQuestions[questionIndex] = updatedQuestion;
+          
+          setProfileQuestions(updatedQuestions);
+          updateQuestionsStats(updatedQuestions);
+          
+          toast.success('Odpowiedź została zaktualizowana');
+          return true;
         }
       } else {
         // Dodanie nowej odpowiedzi
@@ -409,17 +434,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
         
         if (data) {
-          // Dodanie nowej odpowiedzi do lokalnej tablicy
-          const updatedAnswers = [...profileAnswers, data];
-          setProfileAnswers(updatedAnswers);
+          // Aktualizacja lokalnego stanu
+          const updatedQuestion = {
+            ...question,
+            answer: data
+          };
           
-          // Aktualizacja statystyk
-          updateQuestionsStats(profileQuestions, updatedAnswers);
+          const updatedQuestions = [...profileQuestions];
+          updatedQuestions[questionIndex] = updatedQuestion;
+          
+          setProfileQuestions(updatedQuestions);
+          updateQuestionsStats(updatedQuestions);
           
           // Odświeżenie kredytów (które zostały przyznane przez trigger)
           await refreshCredits();
           
-          //toast.success('Dziękujemy za odpowiedź!');
           return true;
         }
       }
@@ -456,7 +485,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   // Pobranie danych przy pierwszym renderowaniu
-  // We only want to fetch user data once on component mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUserData();
@@ -471,7 +499,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     credits,
     zodiacSign,
     profileQuestions,
-    profileAnswers,
     questionsStats,
     loading,
     updateProfile,
