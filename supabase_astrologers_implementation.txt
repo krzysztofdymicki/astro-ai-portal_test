@@ -1,0 +1,408 @@
+-- TABELE DLA SYSTEMU ASTROLOGÓW I HOROSKOPÓW
+
+-- Tabela z podstawowymi danymi astrologów
+CREATE TABLE astrologers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  display_name TEXT NOT NULL, -- Imię wyświetlane (może być pseudonim)
+  profile_image_url TEXT, -- URL do zdjęcia profilowego (przechowywane w storage)
+  cover_image_url TEXT, -- URL do zdjęcia w tle profilu (opcjonalne)
+  short_bio TEXT, -- Krótkie bio dla listy astrologów
+  full_bio TEXT, -- Pełne bio dla strony szczegółowej
+  years_of_experience INTEGER, -- Liczba lat doświadczenia
+  rating_average DECIMAL(3, 2) DEFAULT 0, -- Średnia ocen z recenzji
+  ratings_count INTEGER DEFAULT 0, -- Liczba ocen
+  languages TEXT[] DEFAULT '{}', -- Języki, w których astrolog oferuje usługi
+  is_featured BOOLEAN DEFAULT false, -- Czy astrolog jest wyróżniony
+  is_available BOOLEAN DEFAULT true, -- Czy astrolog jest obecnie dostępny
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  CONSTRAINT ratings_range CHECK (rating_average BETWEEN 0 AND 5)
+);
+
+-- Tabela z dostępnością astrologów
+CREATE TABLE astrologer_availability (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  astrologer_id UUID NOT NULL REFERENCES astrologers(id) ON DELETE CASCADE,
+  day_of_week INTEGER NOT NULL, -- 0-6, gdzie 0=niedziela, 1=poniedziałek, itd.
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  CONSTRAINT valid_day_of_week CHECK (day_of_week BETWEEN 0 AND 6),
+  CONSTRAINT valid_time_range CHECK (start_time < end_time)
+);
+
+-- Tabela z recenzjami astrologów
+CREATE TABLE astrologer_reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  astrologer_id UUID NOT NULL REFERENCES astrologers(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL, -- Ocena 1-5
+  comment TEXT, -- Treść recenzji (opcjonalna)
+  is_published BOOLEAN DEFAULT true, -- Czy recenzja jest opublikowana
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  UNIQUE(astrologer_id, user_id), -- Jeden użytkownik może dodać tylko jedną recenzję dla astrologa
+  CONSTRAINT rating_range CHECK (rating BETWEEN 1 AND 5)
+);
+
+-- Tabela z cenami horoskopów dla astrologów (w kredytach)
+CREATE TABLE astrologer_horoscope_prices (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  astrologer_id UUID NOT NULL REFERENCES astrologers(id) ON DELETE CASCADE,
+  horoscope_type VARCHAR(50) NOT NULL, -- 'daily', 'weekly', 'monthly', 'yearly', 'lifetime'
+  credits_price INTEGER NOT NULL, -- Cena w kredytach
+  description TEXT, -- Opcjonalny opis oferty
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  UNIQUE(astrologer_id, horoscope_type),
+  CONSTRAINT valid_horoscope_type CHECK (horoscope_type IN ('daily', 'weekly', 'monthly', 'yearly', 'lifetime'))
+);
+
+-- Tabela zamówień horoskopów
+CREATE TABLE horoscope_orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  astrologer_id UUID NOT NULL REFERENCES astrologers(id) ON DELETE CASCADE,
+  horoscope_type VARCHAR(50) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  credits_amount INTEGER NOT NULL, -- Ilość kredytów
+  user_notes TEXT, -- Notatki użytkownika do zamówienia
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  completed_at TIMESTAMP WITH TIME ZONE,
+  
+  CONSTRAINT valid_horoscope_type CHECK (horoscope_type IN ('daily', 'weekly', 'monthly', 'yearly', 'lifetime')),
+  CONSTRAINT valid_status CHECK (status IN ('pending', 'processing', 'completed', 'cancelled'))
+);
+
+-- Tabela horoskopów (gotowych)
+CREATE TABLE horoscopes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID NOT NULL REFERENCES horoscope_orders(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  astrologer_id UUID NOT NULL REFERENCES astrologers(id) ON DELETE CASCADE,
+  horoscope_type VARCHAR(50) NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  valid_from DATE,
+  valid_to DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  
+  CONSTRAINT valid_horoscope_type CHECK (horoscope_type IN ('daily', 'weekly', 'monthly', 'yearly', 'lifetime'))
+);
+
+-- FUNKCJE I TRIGGERY
+
+-- Funkcja do aktualizacji średniej oceny i liczby ocen astrologa
+CREATE OR REPLACE FUNCTION update_astrologer_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Aktualizuj średnią ocenę i liczbę ocen dla danego astrologa
+  UPDATE astrologers
+  SET 
+    rating_average = (
+      SELECT COALESCE(AVG(rating), 0)
+      FROM astrologer_reviews
+      WHERE astrologer_id = NEW.astrologer_id
+      AND is_published = true
+    ),
+    ratings_count = (
+      SELECT COALESCE(COUNT(*), 0)
+      FROM astrologer_reviews
+      WHERE astrologer_id = NEW.astrologer_id
+      AND is_published = true
+    ),
+    updated_at = now()
+  WHERE id = NEW.astrologer_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger po dodaniu/aktualizacji/usunięciu recenzji
+CREATE TRIGGER trigger_update_astrologer_rating
+AFTER INSERT OR UPDATE OR DELETE ON astrologer_reviews
+FOR EACH ROW
+EXECUTE FUNCTION update_astrologer_rating();
+
+-- Funkcja aktualizująca timestamp dla astrologów
+CREATE OR REPLACE FUNCTION update_astrologer_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger dla aktualizacji timestamp
+CREATE TRIGGER trigger_update_astrologer_timestamp
+BEFORE UPDATE ON astrologers
+FOR EACH ROW
+EXECUTE FUNCTION update_astrologer_timestamp();
+
+-- Funkcja do aktualizacji statusu zamówień i timestampów
+CREATE OR REPLACE FUNCTION update_order_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  
+  -- Jeśli status zmienił się na 'completed', ustaw completed_at
+  IF NEW.status = 'completed' AND (OLD.status != 'completed' OR OLD.completed_at IS NULL) THEN
+    NEW.completed_at = NOW();
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger dla aktualizacji timestamp zamówień
+CREATE TRIGGER trigger_update_order_timestamp
+BEFORE UPDATE ON horoscope_orders
+FOR EACH ROW
+EXECUTE FUNCTION update_order_timestamp();
+
+-- POLITYKI BEZPIECZEŃSTWA (RLS)
+
+-- Włączenie RLS dla wszystkich tabel
+ALTER TABLE astrologers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE astrologer_availability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE astrologer_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE astrologer_horoscope_prices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE horoscope_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE horoscopes ENABLE ROW LEVEL SECURITY;
+
+-- Polityki dla astrologów (publiczny dostęp do odczytu)
+CREATE POLICY "Każdy może przeglądać astrologów" 
+ON astrologers FOR SELECT 
+TO authenticated, anon
+USING (true);
+
+-- Polityki dla dostępności astrologów (publiczny dostęp do odczytu)
+CREATE POLICY "Każdy może przeglądać dostępność astrologów" 
+ON astrologer_availability FOR SELECT 
+TO authenticated, anon
+USING (true);
+
+-- Polityki dla recenzji (publiczny dostęp do odczytu, tylko autor może dodawać)
+CREATE POLICY "Każdy może przeglądać opublikowane recenzje" 
+ON astrologer_reviews FOR SELECT 
+TO authenticated, anon
+USING (is_published = true);
+
+CREATE POLICY "Zalogowani użytkownicy mogą dodawać recenzje" 
+ON astrologer_reviews FOR INSERT 
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Użytkownicy mogą aktualizować swoje recenzje" 
+ON astrologer_reviews FOR UPDATE 
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- Polityki dla cen horoskopów (publiczny dostęp do odczytu)
+CREATE POLICY "Każdy może przeglądać ceny horoskopów" 
+ON astrologer_horoscope_prices FOR SELECT 
+TO authenticated, anon
+USING (true);
+
+-- Polityki dla zamówień horoskopów (tylko właściciel)
+CREATE POLICY "Użytkownicy widzą tylko swoje zamówienia" 
+ON horoscope_orders FOR SELECT 
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Użytkownicy mogą dodawać zamówienia" 
+ON horoscope_orders FOR INSERT 
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Użytkownicy mogą anulować swoje zamówienia" 
+ON horoscope_orders FOR UPDATE 
+TO authenticated
+USING (auth.uid() = user_id AND (status = 'pending' OR status = 'processing'));
+
+-- Polityki dla horoskopów (tylko właściciel może widzieć)
+CREATE POLICY "Użytkownicy widzą tylko swoje horoskopy" 
+ON horoscopes FOR SELECT 
+TO authenticated
+USING (auth.uid() = user_id);
+
+-- INDEKSY
+
+-- Indeksy dla przyspieszenia wyszukiwań
+CREATE INDEX idx_astrologers_display_name ON astrologers(display_name);
+CREATE INDEX idx_astrologers_is_featured ON astrologers(is_featured);
+CREATE INDEX idx_astrologers_rating ON astrologers(rating_average DESC);
+CREATE INDEX idx_astrologer_reviews_astrologer_id ON astrologer_reviews(astrologer_id);
+CREATE INDEX idx_astrologer_availability_astrologer_id ON astrologer_availability(astrologer_id);
+CREATE INDEX idx_astrologer_horoscope_prices_astrologer_id ON astrologer_horoscope_prices(astrologer_id, horoscope_type);
+CREATE INDEX idx_horoscope_orders_user_id ON horoscope_orders(user_id);
+CREATE INDEX idx_horoscope_orders_astrologer_id ON horoscope_orders(astrologer_id);
+CREATE INDEX idx_horoscope_orders_status ON horoscope_orders(status);
+CREATE INDEX idx_horoscopes_user_id ON horoscopes(user_id);
+CREATE INDEX idx_horoscopes_order_id ON horoscopes(order_id);
+
+-- Dodanie przykładowych astrologów
+INSERT INTO astrologers 
+(first_name, last_name, display_name, short_bio, full_bio, years_of_experience, languages, is_featured)
+VALUES
+('Anna', 'Kowalska', 'Anna Kowalska', 
+ 'Doświadczona astrolożka specjalizująca się w horoskopach natalnych i przewidywaniu przyszłości.', 
+ 'Anna Kowalska jest uznaną astrolożką z ponad 15-letnim doświadczeniem. Jej analizy wyróżniają się niezwykłą precyzją i głębią. Anna łączy tradycyjną astrologię z elementami psychologii, co pozwala na głębsze zrozumienie własnego potencjału.
+
+Anna ukończyła prestiżową szkołę astrologii w Londynie i od tamtej pory nieustannie poszerza swoją wiedzę. Jej horoskopy są szczegółowe i przepełnione intuicyjnym zrozumieniem ludzkiej natury, co sprawia, że jej klienci otrzymują nie tylko przewidywania, ale też cenne wskazówki życiowe.
+
+W swoich analizach Anna wykorzystuje zarówno astrologię zachodnią, jak i elementy astrologii wedyjskiej, tworząc kompleksowy obraz energii kosmicznych wpływających na nasze życie. Jej horoskopy są nie tylko precyzyjne, ale również praktyczne - zawierają konkretne wskazówki, jak wykorzystać potencjał zapisany w gwiazdach.', 
+ 15, 
+ ARRAY['polski', 'angielski'], 
+ true);
+
+INSERT INTO astrologers 
+(first_name, last_name, display_name, short_bio, full_bio, years_of_experience, languages, is_featured)
+VALUES
+('Marek', 'Nowak', 'Mistrz Marek', 
+ 'Intuicyjny astrolog z darem jasnowidzenia, tworzy niezwykle trafne horoskopy i przepowiednie.', 
+ 'Marek Nowak, znany jako Mistrz Marek, łączy tradycyjną astrologię z niezwykłą intuicją i darem jasnowidzenia. Od ponad 12 lat pomaga ludziom odkrywać ich potencjał i przyszłe ścieżki życiowe poprzez precyzyjne horoskopy i przepowiednie.
+
+Jego podejście charakteryzuje się ciepłem i zrozumieniem. Mistrz Marek wierzy, że każdy człowiek ma potencjał do kreowania własnego przeznaczenia, a horoskopy służą jako mapa możliwości. W swoich analizach skupia się nie tylko na przewidywaniu wydarzeń, ale przede wszystkim na rozwijaniu samoświadomości i pełnym wykorzystaniu osobistego potencjału.
+
+Horoskopy tworzone przez Marka są znane z niezwykłej trafności i głębi. Jego umiejętność łączenia wiedzy astrologicznej z intuicyjnym wglądem sprawia, że każda analiza jest wyjątkowa i dopasowana do indywidualnych potrzeb klienta.',
+ 12, 
+ ARRAY['polski'], 
+ false);
+
+INSERT INTO astrologers 
+(first_name, last_name, display_name, short_bio, full_bio, years_of_experience, languages, is_featured)
+VALUES
+('Katarzyna', 'Wiśniewska', 'Kasandra', 
+ 'Ekspertka od horoskopów długoterminowych i analiz karmicznych z 20-letnim doświadczeniem.', 
+ 'Katarzyna "Kasandra" Wiśniewska od 20 lat tworzy horoskopy i analizy astrologiczne, które wyróżniają się niezwykłą precyzją i głębią duchową. Specjalizuje się w horoskopach długoterminowych i analizach karmicznych, pomagając zrozumieć głębsze wzorce i lekcje obecne w życiu.
+
+Kasandra posiada rozległą wiedzę z zakresu różnych systemów astrologicznych, od klasycznej astrologii zachodniej po bardziej ezoteryczne podejścia. Ta wszechstronność pozwala jej tworzyć horoskopy dostosowane do indywidualnych potrzeb i pytań klienta.
+
+Jej analizy słyną z trafności i praktycznych wskazówek. Kasandra nie tylko opisuje wpływy planetarne, ale też sugeruje konkretne działania i podejścia, które mogą pomóc w harmonijnym współpracowaniu z energiami kosmicznymi. Jej horoskopy życiowe są szczególnie cenione za głębię i perspektywę duchową, jaką oferują.',
+ 20, 
+ ARRAY['polski', 'rosyjski'], 
+ true);
+
+-- Dodanie cen horoskopów dla poszczególnych astrologów (w kredytach)
+-- Anna Kowalska
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'daily', 5, 'Codzienny horoskop z precyzyjnymi wskazówkami na nadchodzący dzień'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'weekly', 20, 'Tygodniowy horoskop z analizą wpływów planetarnych i kluczowych dni'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'monthly', 50, 'Szczegółowy horoskop miesięczny z kalendarzem pomyślnych dni i pełną analizą'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'yearly', 150, 'Kompleksowy horoskop roczny obejmujący wszystkie sfery życia'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'lifetime', 500, 'Pełna analiza życiowa, karmiczna i progresywna'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+-- Mistrz Marek
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'daily', 6, 'Intuicyjny horoskop dzienny z elementami jasnowidzenia'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'weekly', 25, 'Tygodniowa analiza z wskazówkami na pomyślne i krytyczne dni'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'monthly', 60, 'Głęboki miesięczny horoskop z wglądem w przemiany energetyczne'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'yearly', 180, 'Roczna mapa astralna ze szczegółowym omówieniem wszystkich aspektów'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'lifetime', 650, 'Kompleksowa analiza życiowa z elementami przepowiedni i wskazaniem kluczowych momentów'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+-- Kasandra
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'daily', 8, 'Wnikliwy dzienny horoskop z uwzględnieniem aspektów karmicznych'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'weekly', 30, 'Tygodniowa analiza z głębokim wglądem duchowym'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'monthly', 80, 'Miesięczny horoskop z analizą wzorców karmicznych i rozwoju duchowego'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'yearly', 220, 'Głęboka roczna analiza z uwzględnieniem duchowej ścieżki i rozwoju'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_horoscope_prices (astrologer_id, horoscope_type, credits_price, description)
+SELECT id, 'lifetime', 800, 'Kompleksowa analiza życiowa, karmiczna i duchowa z mapą rozwoju duszy'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+-- Dodanie przykładowych godzin dostępności
+-- Anna Kowalska - dostępna w poniedziałki, środy i piątki
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 1, '10:00', '16:00'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 3, '12:00', '18:00'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 5, '09:00', '15:00'
+FROM astrologers WHERE display_name = 'Anna Kowalska';
+
+-- Mistrz Marek - dostępny we wtorki, czwartki i soboty
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 2, '14:00', '20:00'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 4, '14:00', '20:00'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 6, '10:00', '16:00'
+FROM astrologers WHERE display_name = 'Mistrz Marek';
+
+-- Kasandra - dostępna codziennie oprócz niedziel
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 1, '09:00', '17:00'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 2, '09:00', '17:00'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 3, '09:00', '17:00'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 4, '09:00', '17:00'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 5, '09:00', '17:00'
+FROM astrologers WHERE display_name = 'Kasandra';
+
+INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
+SELECT id, 6, '10:00', '14:00'
+FROM astrologers WHERE display_name = 'Kasandra';
