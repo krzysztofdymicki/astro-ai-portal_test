@@ -1,3 +1,5 @@
+"use client"
+
 import Link from 'next/link';
 import { ArrowRight, User } from 'lucide-react';
 import { FeatureCard } from '@/components/ui/landing/FeatureCard';

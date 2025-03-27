@@ -4,46 +4,22 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { FormInput } from '@/components/ui/FormInput'
+import { validateLoginForm, LoginFormErrors } from '@/utils/validation'
 
 export default function Login() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{
-    email?: boolean;
-    password?: boolean;
-  }>({})
+  const [fieldErrors, setFieldErrors] = useState<LoginFormErrors>({})
   
   const supabase = createClient()
 
   const validateForm = () => {
-    const errors: {
-      email?: boolean;
-      password?: boolean;
-    } = {};
-    let isValid = true;
-    
-    // Walidacja email
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      errors.email = true;
-      isValid = false;
-      toast.error("Nieprawidłowy adres email");
-    }
-    
-    // Walidacja hasła
-    if (!password) {
-      errors.password = true;
-      isValid = false;
-      toast.error("Wprowadź hasło");
-    }
-    
+    const { isValid, errors } = validateLoginForm(email, password);
     setFieldErrors(errors);
     return isValid;
   };
@@ -137,26 +113,34 @@ export default function Login() {
         className="space-y-4"
         aria-label="login-form"
       >
-        <div className="space-y-2">
-          <Label htmlFor="email" className="form-label">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            name="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setFieldErrors(prev => ({ ...prev, email: false }));
-            }}
-            className={`form-input ${fieldErrors.email ? "error" : ""}`}
-            required
-            data-testid="email-input"
-          />
-        </div>
+        <FormInput
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setFieldErrors(prev => ({ ...prev, email: false }));
+          }}
+          error={fieldErrors.email}
+          required
+          testId="email-input"
+        />
         
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="password" className="form-label" data-testid="password-label">Hasło</Label>
+        <FormInput
+          id="password"
+          label="Hasło"
+          type="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors(prev => ({ ...prev, password: false }));
+          }}
+          error={fieldErrors.password}
+          required
+          testId="password-input"
+          showPasswordToggle
+          actionElement={
             <button 
               type="button" 
               onClick={handleResetPassword}
@@ -166,38 +150,8 @@ export default function Login() {
             >
               Zapomniałeś hasła?
             </button>
-          </div>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setFieldErrors(prev => ({ ...prev, password: false }));
-              }}
-              className={`form-input pr-10 ${fieldErrors.password ? "error" : ""}`}
-              required
-              data-testid="password-input"
-              aria-labelledby="password-label"
-            />
-            <button 
-              type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
-              aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
-              data-testid="toggle-password-visibility"
-            >
-              {showPassword ? (
-                <EyeOffIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-        </div>
+          }
+        />
         
         <div className="mt-6">
           <Button 
