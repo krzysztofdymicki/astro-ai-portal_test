@@ -58,40 +58,6 @@ export default function NotFound() {
         <div className="star small" style={{ top: '20%', left: '45%' }}></div>
         <div className="star medium" style={{ top: '50%', left: '50%' }}></div>
       </div>
-      
-      {/* Style dla efektów */}
-      <style jsx>{`
-        .mystical-glow {
-          text-shadow: 0 0 10px rgba(129, 140, 248, 0.7), 0 0 20px rgba(129, 140, 248, 0.5);
-        }
-        
-        .crystal-ball {
-          filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8));
-        }
-        
-        .star {
-          position: absolute;
-          background-color: white;
-          border-radius: 50%;
-          opacity: 0.6;
-          animation: twinkle 4s infinite ease-in-out;
-        }
-        
-        .star.small {
-          width: 2px;
-          height: 2px;
-        }
-        
-        .star.medium {
-          width: 3px;
-          height: 3px;
-        }
-        
-        @keyframes twinkle {
-          0%, 100% { opacity: 0.2; }
-          50% { opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 }

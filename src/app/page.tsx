@@ -1,7 +1,9 @@
-'use client';
-
 import Link from 'next/link';
-import { Star, Shield, Clock, Users, ArrowRight, User } from 'lucide-react';
+import { ArrowRight, User } from 'lucide-react';
+import { FeatureCard } from '@/components/ui/landing/FeatureCard';
+import { features } from '@/data/landing/features';
+import { TestimonialCard } from '@/components/ui/landing/TestimonialCard';
+import { testimonials } from '@/data/landing/testimonials';
 
 export default function HomePage() {
   return (
@@ -46,35 +48,15 @@ export default function HomePage() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8" data-testid="features-grid">
-            <div className="bg-indigo-900/40 border border-indigo-300/30 rounded-lg p-6 text-center" data-testid="feature-experience">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-indigo-800/60 flex items-center justify-center">
-                  <Clock className="h-8 w-8 text-indigo-300" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">15+</h3>
-              <p className="text-indigo-200">lat doświadczenia</p>
-            </div>
-            
-            <div className="bg-indigo-900/40 border border-indigo-300/30 rounded-lg p-6 text-center" data-testid="feature-clients">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-indigo-800/60 flex items-center justify-center">
-                  <Users className="h-8 w-8 text-indigo-300" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">10 000+</h3>
-              <p className="text-indigo-200">zadowolonych klientów</p>
-            </div>
-            
-            <div className="bg-indigo-900/40 border border-indigo-300/30 rounded-lg p-6 text-center" data-testid="feature-accuracy">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-indigo-800/60 flex items-center justify-center">
-                  <Shield className="h-8 w-8 text-indigo-300" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">ponad 90%</h3>
-              <p className="text-indigo-200">trafność</p>
-            </div>
+            {features.map((feature, index) => (
+              <FeatureCard
+                key={index}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                testId={feature.testId}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -108,29 +90,13 @@ export default function HomePage() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8" data-testid="testimonials-grid">
-            <div className="bg-indigo-900/40 border border-indigo-300/30 rounded-lg p-6" data-testid="testimonial-1">
-              <div className="flex mb-4">
-                {[1, 2, 3, 4, 5].map((_, index) => (
-                  <Star key={index} className="h-5 w-5 text-yellow-300 fill-yellow-300" />
-                ))}
-              </div>
-              <p className="text-indigo-100 italic mb-4">
-              &ldquo;Początkowo byłam sceptyczna, ale horoskopy od Twojej Przepowiedni okazały się zdumiewająco trafne! Przewidziały ważne zmiany w moim życiu zawodowym, które rzeczywiście nastąpiły miesiąc później. Jestem pod ogromnym wrażeniem!&rdquo;
-              </p>
-              <p className="text-indigo-300 font-semibold">- Anna K., Warszawa</p>
-            </div>
-            
-            <div className="bg-indigo-900/40 border border-indigo-300/30 rounded-lg p-6" data-testid="testimonial-2">
-              <div className="flex mb-4">
-                {[1, 2, 3, 4, 5].map((_, index) => (
-                  <Star key={index} className="h-5 w-5 text-yellow-300 fill-yellow-300" />
-                ))}
-              </div>
-              <p className="text-indigo-100 italic mb-4">
-              &ldquo;To co najbardziej cenię w Twojej Przepowiedni to personalizacja. Nie są to ogólnikowe horoskopy, jakie czytałem wcześniej, ale naprawdę dopasowane do mojej sytuacji życiowej. Polecam każdemu, kto szuka prawdziwego wglądu!&rdquo;
-              </p>
-              <p className="text-indigo-300 font-semibold">- Marek W., Kraków</p>
-            </div>
+            {testimonials.map((testimonial) => (
+              <TestimonialCard
+                key={testimonial.id}
+                testimonial={testimonial}
+                testId={`testimonial-${testimonial.id}`}
+              />
+            ))}
           </div>
         </div>
       </section>
