@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { FormInput } from '@/components/ui/FormInput'
 import { validateLoginForm, LoginFormErrors } from '@/utils/validation'
+import { BasicForm } from '@/components/ui/BasicForm'
 
 export default function Login() {
   const router = useRouter()
@@ -107,11 +107,19 @@ export default function Login() {
         </p>
       </div>
 
-      {/* Formularz logowania */}
-      <form 
-        onSubmit={handleSignIn} 
-        className="space-y-4"
-        aria-label="login-form"
+      <BasicForm 
+        onSubmit={handleSignIn}
+        ariaLabel="login-form"
+        submitText="Zaloguj się"
+        isLoading={loading}
+        footerContent={
+          <>
+            Nie masz jeszcze konta?{' '}
+            <Link href="/register" className="text-indigo-600 hover:underline">
+              Zarejestruj się
+            </Link>
+          </>
+        }
       >
         <FormInput
           id="email"
@@ -152,24 +160,7 @@ export default function Login() {
             </button>
           }
         />
-        
-        <div className="mt-6">
-          <Button 
-            className="w-full btn-primary"
-            type="submit" 
-            disabled={loading}
-          >
-            {loading ? 'Logowanie...' : 'Zaloguj się'}
-          </Button>
-        </div>
-        
-        <div className="text-center text-sm text-gray-600 mt-4 text-light">
-          Nie masz jeszcze konta?{' '}
-          <Link href="/register" className="text-indigo-600 hover:underline">
-            Zarejestruj się
-          </Link>
-        </div>
-      </form>
+      </BasicForm>
     </div>
   )
 }

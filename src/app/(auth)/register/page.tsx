@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { FormInput } from '@/components/ui/FormInput'
+import { BasicForm } from '@/components/ui/BasicForm'
 
 export default function Register() {
   const router = useRouter()
@@ -17,7 +16,6 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{
     email?: boolean;
     password?: boolean;
@@ -160,21 +158,21 @@ export default function Register() {
         </div>
         
         <div className="flex flex-col gap-2">
-        <Button 
-          variant="outline"
-          className="w-full text-indigo-700 border-indigo-300 hover:bg-indigo-100/50 mb-2"
-          onClick={handleResendEmail}
-          disabled={loading}
-        >
-        {loading ? 'Wysyłanie...' : 'Wyślij ponownie link aktywacyjny'}
-        </Button>
-          
-        <Button 
-          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
-          onClick={() => router.push('/login')}
-        >
-          Przejdź do logowania
-        </Button>
+          <Button 
+            variant="outline"
+            className="w-full text-indigo-700 border-indigo-300 hover:bg-indigo-100/50 mb-2"
+            onClick={handleResendEmail}
+            disabled={loading}
+          >
+            {loading ? 'Wysyłanie...' : 'Wyślij ponownie link aktywacyjny'}
+          </Button>
+            
+          <Button 
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
+            onClick={() => router.push('/login')}
+          >
+            Przejdź do logowania
+          </Button>
         </div>
       </div>
     )
@@ -189,101 +187,78 @@ export default function Register() {
         </p>
       </div>
 
-      <form 
-        onSubmit={handleSignUp} 
-        className="space-y-4"
-        data-testid="register-form"
+      <BasicForm 
+        onSubmit={handleSignUp}
+        ariaLabel="register-form"
+        submitText="Zarejestruj się"
+        isLoading={loading}
+        footerContent={
+          <>
+            <p className="text-xs text-gray-500 mb-4 text-light">
+              Rejestrując się, akceptujesz 
+              <span className="pointer-events-none"> 
+                <Link href="/regulamin" className="text-indigo-600 hover:underline pointer-events-auto" tabIndex={-1}> regulamin 
+                </Link> i <Link href="/polityka-prywatnosci" className="text-indigo-600 hover:underline pointer-events-auto" tabIndex={-1}>
+                  politykę prywatności
+                </Link>
+              </span> serwisu Twoja Przepowiednia.
+            </p>
+            <div>
+              Masz już konto?{' '}
+              <Link href="/login" className="text-indigo-600 hover:underline">
+                Zaloguj się
+              </Link>
+            </div>
+          </>
+        }
       >
-        <div className="space-y-2">
-          <Label htmlFor="email" className="form-label">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            name="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setFieldErrors(prev => ({ ...prev, email: false }));
-            }}
-            className={`form-input ${fieldErrors.email ? "error" : ""}`}
-            required
-            data-testid="email-input"
-          />
-        </div>
+        <FormInput
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setFieldErrors(prev => ({ ...prev, email: false }));
+          }}
+          error={fieldErrors.email}
+          required
+          testId="email-input"
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="password" className="form-label">Hasło</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setFieldErrors(prev => ({ ...prev, password: false }));
-              }}
-              className={`form-input pr-10 ${fieldErrors.password ? "error" : ""}`}
-              required
-              data-testid="password-input"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 px-3 flex items-center"
-              aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
-              data-testid="toggle-password-visibility"
-            >
-              {showPassword ? <EyeOffIcon className="h-5 w-5 text-gray-500" /> : <EyeIcon className="h-5 w-5 text-gray-500" />}
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 text-light">Hasło musi zawierać co najmniej 6 znaków</p>
-        </div>
+        <FormInput
+          id="password"
+          label="Hasło"
+          type="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors(prev => ({ ...prev, password: false }));
+          }}
+          error={fieldErrors.password}
+          required
+          testId="password-input"
+          showPasswordToggle
+          actionElement={
+            <p className="text-xs text-gray-500 text-light">Minimum 6 znaków</p>
+          }
+        />
         
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="form-label">Potwierdź hasło</Label>
-          <Input
-            id="confirmPassword"
-            type={showPassword ? "text" : "password"}
-            name="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
-            }}
-            className={`form-input ${fieldErrors.confirmPassword ? "error" : ""}`}
-            required
-            data-testid="confirm-password-input"
-          />
-        </div>
-        
-        <div className="mt-6">
-          <Button 
-            className="w-full btn-primary"
-            type="submit" 
-            disabled={loading}
-          >
-            {loading ? 'Tworzenie konta...' : 'Zarejestruj się'}
-          </Button>
-        </div>
-        
-        <p className="text-xs text-gray-500 mt-4 text-center text-light">
-          Rejestrując się, akceptujesz 
-          <span className="pointer-events-none"> 
-            <Link href="/regulamin" className="text-indigo-600 hover:underline pointer-events-auto" tabIndex={-1}> regulamin 
-            </Link> i <Link href="/polityka-prywatnosci" className="text-indigo-600 hover:underline pointer-events-auto" tabIndex={-1}>
-              politykę prywatności
-            </Link>
-          </span> serwisu Twoja Przepowiednia.
-        </p>
-        
-        <div className="text-center text-sm text-gray-600 mt-4 text-light">
-          Masz już konto?{' '}
-          <Link href="/login" className="text-indigo-600 hover:underline">
-            Zaloguj się
-          </Link>
-        </div>
-      </form>
+        <FormInput
+          id="confirmPassword"
+          label="Potwierdź hasło"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            setFieldErrors(prev => ({ ...prev, confirmPassword: false }));
+          }}
+          error={fieldErrors.confirmPassword}
+          required
+          testId="confirm-password-input"
+          showPasswordToggle
+        />
+      </BasicForm>
     </div>
   )
 }

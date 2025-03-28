@@ -15,7 +15,6 @@ import {
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { RELATIONSHIP_STATUS_OPTIONS } from '@/types/profile';
@@ -26,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FormInput } from '@/components/ui/FormInput';
+import { BasicForm } from '@/components/ui/BasicForm';
 
 export default function ProfilePage() {
   const { profile, loading, updateProfile, zodiacSign } = useUser();
@@ -121,53 +122,46 @@ export default function ProfilePage() {
               <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6" data-testid="profile-form">
+            <BasicForm
+              onSubmit={handleSubmit}
+              submitText="Zapisz profil"
+              isLoading={isSaving}
+              className="space-y-6"
+              ariaLabel="Formularz profilu"
+            >
               <div className="grid gap-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Imię */}
-                  <div className="space-y-2">
-                    <Label className="text-indigo-100">
-                      <User className="h-4 w-4 inline mr-2" />
-                      Imię
-                    </Label>
-                    <Input 
-                      data-testid="first-name-input"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      placeholder="Wprowadź swoje imię" 
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
-                    />
-                  </div>
+                  <FormInput
+                    id="first_name"
+                    label={<><User className="h-4 w-4 inline mr-2" />Imię</>}
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    placeholder="Wprowadź swoje imię"
+                    testId="first-name-input"
+                  />
                   
                   {/* Nazwisko */}
-                  <div className="space-y-2">
-                    <Label className="text-indigo-100">Nazwisko</Label>
-                    <Input 
-                      data-testid="last-name-input"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      placeholder="Wprowadź swoje nazwisko" 
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
-                    />
-                  </div>
+                  <FormInput
+                    id="last_name"
+                    label="Nazwisko"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    placeholder="Wprowadź swoje nazwisko"
+                    testId="last-name-input"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Data urodzenia */}
                   <div className="space-y-2">
-                    <Label className="text-indigo-100">
-                      <CalendarIcon className="h-4 w-4 inline mr-2" />
-                      Data urodzenia
-                    </Label>
-                    <Input 
-                      data-testid="birth-date-input"
-                      name="birth_date"
-                      type="date" 
+                    <FormInput
+                      id="birth_date"
+                      label={<><CalendarIcon className="h-4 w-4 inline mr-2" />Data urodzenia</>}
+                      type="date"
                       value={formData.birth_date}
                       onChange={handleInputChange}
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white"
+                      testId="birth-date-input"
                     />
                     {zodiacSign && (
                       <div className="flex items-center mt-1 text-xs text-indigo-300 bg-indigo-900/40 p-1 px-2 rounded border border-indigo-400/20">
@@ -178,51 +172,33 @@ export default function ProfilePage() {
                   </div>
                   
                   {/* Godzina urodzenia */}
-                  <div className="space-y-2">
-                    <Label className="text-indigo-100">
-                      <Clock className="h-4 w-4 inline mr-2" />
-                      Godzina urodzenia
-                    </Label>
-                    <Input 
-                      name="birth_time"
-                      type="time" 
-                      value={formData.birth_time}
-                      onChange={handleInputChange}
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white"
-                    />
-                  </div>
+                  <FormInput
+                    id="birth_time"
+                    label={<><Clock className="h-4 w-4 inline mr-2" />Godzina urodzenia</>}
+                    type="time"
+                    value={formData.birth_time}
+                    onChange={handleInputChange}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Miejsce urodzenia */}
-                  <div className="space-y-2">
-                    <Label className="text-indigo-100">
-                      <MapPin className="h-4 w-4 inline mr-2" />
-                      Miejsce urodzenia
-                    </Label>
-                    <Input 
-                      name="birth_location"
-                      value={formData.birth_location}
-                      onChange={handleInputChange}
-                      placeholder="Miasto, kraj" 
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
-                    />
-                  </div>
+                  <FormInput
+                    id="birth_location"
+                    label={<><MapPin className="h-4 w-4 inline mr-2" />Miejsce urodzenia</>}
+                    value={formData.birth_location}
+                    onChange={handleInputChange}
+                    placeholder="Miasto, kraj"
+                  />
                   
                   {/* Obecna lokalizacja */}
-                  <div className="space-y-2">
-                    <Label className="text-indigo-100">
-                      <MapPin className="h-4 w-4 inline mr-2" />
-                      Obecna lokalizacja
-                    </Label>
-                    <Input 
-                      name="current_location"
-                      value={formData.current_location}
-                      onChange={handleInputChange}
-                      placeholder="Miasto, kraj" 
-                      className="bg-indigo-950/50 border-indigo-300/30 text-white placeholder:text-indigo-400/50"
-                    />
-                  </div>
+                  <FormInput
+                    id="current_location"
+                    label={<><MapPin className="h-4 w-4 inline mr-2" />Obecna lokalizacja</>}
+                    value={formData.current_location}
+                    onChange={handleInputChange}
+                    placeholder="Miasto, kraj"
+                  />
                 </div>
 
                 {/* Stan związku */}
@@ -238,16 +214,15 @@ export default function ProfilePage() {
                     defaultValue={formData.relationship_status}
                     onValueChange={(value) => handleSelectChange('relationship_status', value)}
                   >
-                    <SelectTrigger className="bg-indigo-950/50 border-indigo-300/30 text-white">
+                    <SelectTrigger>
                       <SelectValue placeholder="Wybierz stan związku">
-                        {/* Dodajemy jawne wyświetlanie aktualnie wybranej wartości */}
                         {formData.relationship_status ? 
                           RELATIONSHIP_STATUS_OPTIONS.find(option => option.value === formData.relationship_status)?.label || "Wybierz stan związku" 
                           : "Wybierz stan związku"
                         }
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="bg-indigo-900 border-indigo-300/30 text-white">
+                    <SelectContent>
                       {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -263,28 +238,7 @@ export default function ProfilePage() {
                   <span className="font-semibold">Dlaczego te informacje są ważne?</span> Każdy szczegół Twojego życia ma znaczenie w układaniu precyzyjnej mapy astralnej. Im więcej informacji nam udostępnisz, tym dokładniejsze będą Twoje horoskopy i przepowiednie. Twoje dane są bezpieczne i wykorzystywane wyłącznie do celów astrologicznych.
                 </p>
               </div>
-              
-              <div className="flex justify-end pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={isSaving || loading.profile}
-                  data-testid="save-profile-button"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white border-none shadow-glow"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" data-testid="saving-spinner" />
-                      Zapisywanie...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Zapisz profil
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+            </BasicForm>
           )}
         </CardContent>
       </Card>

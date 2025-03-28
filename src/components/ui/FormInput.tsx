@@ -5,7 +5,7 @@ import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 interface FormInputProps {
   id: string;
-  label: string;
+  label: ReactNode; // Changed from string to ReactNode to allow JSX elements
   type?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -34,6 +34,7 @@ export const FormInput: React.FC<FormInputProps> = ({
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const inputType = showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
+  const isEmpty = value.trim() === '';
   
   return (
     <div className="space-y-2">
@@ -50,11 +51,15 @@ export const FormInput: React.FC<FormInputProps> = ({
           name={id}
           value={value}
           onChange={onChange}
-          className={`form-input ${showPasswordToggle ? 'pr-10' : ''} ${error ? 'error' : ''} ${className}`}
+          className={`form-input ${showPasswordToggle ? 'pr-10' : ''} 
+                     ${error ? 'error' : ''} 
+                     ${isEmpty ? 'bg-slate-50/40 border-slate-200' : ''} 
+                     ${className}`}
           required={required}
           placeholder={placeholder}
           data-testid={testId || `${id}-input`}
           aria-labelledby={`${id}-label`}
+          data-empty={isEmpty}
         />
         {showPasswordToggle && (
           <button
