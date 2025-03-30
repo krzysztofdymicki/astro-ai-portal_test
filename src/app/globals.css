@@ -252,6 +252,16 @@
     border-radius: var(--radius);
   }
   
+  /* Compact card styles for carousels */
+  .compact-card .card-header {
+    padding: 0.75rem;
+  }
+
+  .compact-card .card-content {
+    padding: 0.75rem;
+    padding-top: 0;
+  }
+  
   /* ----- Form Elements ----- */
   .form-input {
     background-color: oklch(1 0 0);
@@ -344,6 +354,15 @@
   
   .backdrop-mystical {
     backdrop-filter: blur(8px);
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

@@ -8,7 +8,6 @@ export default function HoroscopesLayout({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white mystical-glow">Twoje Horoskopy</h1>
       </div>
       
       {children}
