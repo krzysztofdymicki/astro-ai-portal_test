@@ -76,7 +76,7 @@ export default function HoroscopesPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="card-mystical p-4 pb-4 rounded-t-lg border border-indigo-700/30">
+        <div className="card-mystical p-4 pb-0 rounded-t-lg border border-indigo-700/30">
           <TabsList className="bg-transparent w-full border-0 shadow-none">
             <TabsTrigger value="all" className="data-[state=active]:bg-indigo-700/50 data-[state=active]:shadow-mystical">
               Wszystkie
@@ -99,23 +99,22 @@ export default function HoroscopesPage() {
         
           <div className="pt-5 pb-1">
             {loading ? (
-              <div className="flex justify-center py-12">
+              <div className="flex justify-center py-12 min-h-[600px]">
                 <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
               </div>
             ) : (
-              <div>
+              <div className="min-h-[600px]">
                 {/* Wszystkie horoskopy */}
                 <TabsContent value="all" className="space-y-8 mt-0 h-full">
                   {horoscopes.length === 0 && pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center py-16 card-mystical p-6 flex flex-col items-center justify-center min-h-[500px]">
                       <div>
                         <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
+                        <p className="text-muted-foreground max-w-md mx-auto mb-8">
                           Nie masz jeszcze żadnych horoskopów. Zamów swój pierwszy horoskop, aby odkryć, co gwiazdy mają dla Ciebie w zanadrzu.
                         </p>
-                      </div>
-                      <div className="mt-8">
+                        <div className="min-h-[40px]"></div>
                         <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
                           <Link href="/dashboard/horoscopes/order">
                             <Star className="h-5 w-5 mr-2" />
@@ -125,7 +124,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-10">
+                    <div className="min-h-[500px] space-y-10">
                       {/* Sekcja oczekujących zamówień */}
                       {pendingOrders.length > 0 && (
                         <section>
@@ -156,15 +155,13 @@ export default function HoroscopesPage() {
                 {/* Oczekujące zamówienia */}
                 <TabsContent value="pending" className="mt-0 h-full">
                   {pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center py-16 card-mystical p-6 flex flex-col items-center justify-center min-h-[500px]">
                       <div>
                         <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak oczekujących zamówień</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
+                        <p className="text-muted-foreground max-w-md mx-auto mb-8">
                           Nie masz obecnie żadnych oczekujących zamówień. Zamów nowy horoskop, aby dowiedzieć się, co gwiazdy mają dla Ciebie w zanadrzu.
                         </p>
-                      </div>
-                      <div className="mt-8">
                         <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
                           <Link href="/dashboard/horoscopes/order">
                             <Star className="h-5 w-5 mr-2" />
@@ -174,7 +171,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="min-h-[500px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {pendingOrders.map((order) => (
                         <HoroscopeOrderCard key={order.id} order={order} />
                       ))}
@@ -185,15 +182,13 @@ export default function HoroscopesPage() {
                 {/* Dzienne horoskopy */}
                 <TabsContent value="daily" className="mt-0 h-full">
                   {horoscopes.filter(h => h.horoscope_type === 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center py-16 card-mystical p-6 flex flex-col items-center justify-center min-h-[500px]">
                       <div>
                         <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak dziennych horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
+                        <p className="text-muted-foreground max-w-md mx-auto mb-8">
                           Nie masz jeszcze żadnych dziennych horoskopów. Zamów swój pierwszy dzienny horoskop, aby poznać wpływ gwiazd na nadchodzący dzień.
                         </p>
-                      </div>
-                      <div className="mt-8">
                         <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
                           <Link href="/dashboard/horoscopes/order">
                             <Star className="h-5 w-5 mr-2" />
@@ -203,7 +198,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="min-h-[500px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {horoscopes
                         .filter(h => h.horoscope_type === 'daily')
                         .map((horoscope) => (
@@ -216,15 +211,13 @@ export default function HoroscopesPage() {
                 {/* Pozostałe horoskopy */}
                 <TabsContent value="other" className="mt-0 h-full">
                   {horoscopes.filter(h => h.horoscope_type !== 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center py-16 card-mystical p-6 flex flex-col items-center justify-center min-h-[500px]">
                       <div>
                         <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak innych horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
+                        <p className="text-muted-foreground max-w-md mx-auto mb-8">
                           Nie masz jeszcze horoskopów tygodniowych, miesięcznych ani rocznych. Zamów horoskop na dłuższy okres, aby poznać swoje długoterminowe perspektywy.
                         </p>
-                      </div>
-                      <div className="mt-8">
                         <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
                           <Link href="/dashboard/horoscopes/order">
                             <Star className="h-5 w-5 mr-2" />
@@ -234,7 +227,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="min-h-[500px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {horoscopes
                         .filter(h => h.horoscope_type !== 'daily')
                         .map((horoscope) => (

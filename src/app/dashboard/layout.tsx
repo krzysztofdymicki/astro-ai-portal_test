@@ -2,6 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { 
+  User, 
+  CreditCard, 
+  Settings, 
+  HelpCircle, 
+  LogOut,
+  Moon,
+  Star,
+  PlusCircle,
+  HelpingHand
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,17 +20,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { UserProvider, useUser } from '@/contexts/UserContext';
 import LoadingScreen from '@/components/ui/loading-screen';
 import DebugContextPanel from '@/components/debug/DebugContextPanel';
-import { 
-  NavigationMenuSection, 
-  getNavigationData 
-} from '@/components/ui/dashboard/NavigationMenuElements';
 
 // DashboardHeader - komponent zawierający header z menu użytkownika
 function DashboardHeader() {
@@ -44,13 +56,6 @@ function DashboardHeader() {
       toast.error("Wystąpił nieoczekiwany błąd");
     }
   };
-  
-  // Pobierz dane nawigacji
-  const navigationSections = getNavigationData(
-    handleSignOut, 
-    credits?.balance || 0, 
-    loading.initial
-  );
 
   return (
     <header className="bg-indigo-900/70 backdrop-blur-sm shadow-md z-10">
@@ -85,10 +90,80 @@ function DashboardHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-indigo-700/50" />
                 
-                {/* Renderowanie sekcji menu */}
-                {navigationSections.map((section) => (
-                  <NavigationMenuSection key={section.id} section={section} />
-                ))}
+                {/* Kredyty */}
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80">
+                  <CreditCard className="h-4 w-4 text-indigo-300" />
+                  <span>Kredyty:</span>
+                  <span className="ml-auto font-bold">{credits?.balance || 0}</span>
+                </DropdownMenuItem>
+                
+                {/* Doładuj kredyty */}
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                  <Link href="/dashboard/credits">
+                    <PlusCircle className="h-4 w-4 text-green-300" />
+                    <span>Doładuj kredyty</span>
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Opcje astralne */}
+                <DropdownMenuGroup>
+                  {/* Horoskopy */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/horoscopes">
+                      <Moon className="h-4 w-4 text-indigo-300" />
+                      <span>Twoje horoskopy</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Zamów horoskop */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/horoscopes/order">
+                      <Star className="h-4 w-4 text-yellow-300" />
+                      <span>Zamów horoskop</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Pytania */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/questions">
+                      <HelpingHand className="h-4 w-4 text-indigo-300" />
+                      <span>Pytania i odpowiedzi</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                
+                <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Ustawienia i pomoc */}
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                  <Link href="/dashboard/profile">
+                    <User className="h-4 w-4 text-indigo-300" />
+                    <span>Mój profil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80">
+                  <Settings className="h-4 w-4 text-indigo-300" />
+                  <span>Ustawienia</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80">
+                  <HelpCircle className="h-4 w-4 text-indigo-300" />
+                  <span>Pomoc</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Wyloguj */}
+                <DropdownMenuItem 
+                  className="flex items-center gap-2 cursor-pointer text-red-300 hover:bg-red-900/30 hover:text-red-200"
+                  onClick={handleSignOut}
+                  disabled={loading.initial}
+                  data-testid="logout-button"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{loading.initial ? "Wylogowywanie..." : "Wyloguj się"}</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -98,7 +173,7 @@ function DashboardHeader() {
   );
 }
 
-// Layout dashboardu - pozostała część kodu
+// Layout dashboardu, który opakowuje wszystkie podstrony w sekcji dashboard
 export default function DashboardLayout({
   children,
 }: {
