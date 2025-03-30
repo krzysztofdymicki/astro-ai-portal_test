@@ -123,26 +123,26 @@ export default function Question({
         
         {/* Dolna linia - przyciski nawigacji */}
         <div className="flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={onPrevious}
-            disabled={index === 0 || isLoading}
-            className="text-indigo-100 hover:text-white border border-indigo-800/30 hover:border-indigo-700/50 hover:bg-indigo-900/40"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Poprzednie
-          </Button>
-          
-          <Button
-            variant="ghost"
-            onClick={onNext}
-            disabled={index === totalQuestions - 1 || isLoading}
-            className="text-indigo-100 hover:text-white border border-indigo-800/30 hover:border-indigo-700/50 hover:bg-indigo-900/40"
-          >
-            Następne
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
+  <Button
+    variant="outline"
+    onClick={onPrevious}
+    disabled={index === 0 || isLoading}
+    className="text-white bg-indigo-700/40 border border-indigo-500/50 hover:text-white hover:bg-indigo-700/60 hover:border-indigo-500/70"
+  >
+    <ArrowLeft className="h-4 w-4 mr-2" />
+    Poprzednie
+  </Button>
+  
+  <Button
+    variant="outline"
+    onClick={onNext}
+    disabled={index === totalQuestions - 1 || isLoading}
+    className="text-white bg-indigo-700/40 border border-indigo-500/50 hover:text-white hover:bg-indigo-700/60 hover:border-indigo-500/70"
+  >
+    Następne
+    <ArrowRight className="h-4 w-4 ml-2" />
+  </Button>
+</div>
       </div>
     </div>
   );
