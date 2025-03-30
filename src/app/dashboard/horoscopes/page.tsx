@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Clock, Star } from 'lucide-react';
-import { Horoscope, HoroscopeOrder } from '@/app/types/horoscopes';
+import { Horoscope, HoroscopeOrder } from '@/types/horoscopes';
 import { HoroscopeCard } from '@/components/ui/horoscopes/HoroscopeCard';
 import { HoroscopeOrderCard } from '@/components/ui/horoscopes/HoroscopeOrderCard';
 

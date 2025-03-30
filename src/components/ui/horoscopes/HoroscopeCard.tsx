@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Horoscope } from '@/app/types/horoscopes';
-import { formatHoroscopeType } from '@/app/types/horoscopes';
+import { Horoscope } from '@/types/horoscopes';
+import { formatHoroscopeType } from '@/types/horoscopes';
 import { getHoroscopeTypeIcon, formatValidityPeriod } from '@/lib/horoscope-utils';
 
 interface HoroscopeCardProps {

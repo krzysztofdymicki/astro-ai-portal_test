@@ -9,7 +9,7 @@ import {
   Loader2,
   CheckCircle2
 } from 'lucide-react';
-import { Horoscope, HoroscopeType, OrderStatus } from '@/app/types/horoscopes';
+import { Horoscope, HoroscopeType, HoroscopeOrderStatus } from '@/types/horoscopes';
 
 /**
  * Returns the appropriate icon for a horoscope type
@@ -28,7 +28,7 @@ export const getHoroscopeTypeIcon = (type: HoroscopeType) => {
 /**
  * Component that displays an icon based on order status
  */
-export const StatusIcon = ({ status }: { status: OrderStatus | string }) => {
+export const StatusIcon = ({ status }: { status: HoroscopeOrderStatus | string }) => {
   switch (status) {
     case 'pending':
       return <Clock className="h-4 w-4 text-yellow-300" />;
