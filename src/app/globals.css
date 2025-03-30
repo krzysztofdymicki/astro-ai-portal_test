@@ -294,6 +294,38 @@
   .mystical-glow {
     text-shadow: 0 0 10px rgba(139, 92, 246, 0.7), 0 0 20px rgba(139, 92, 246, 0.5);
   }
+  
+  /* Form styling */
+  .form-container {
+    width: 100%;
+    max-width: 550px;
+    margin: 0 auto;
+  }
+
+  .form-card {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 0 15px 0 rgba(79, 70, 229, 0.1);
+    overflow: hidden;
+  }
+
+  .form-info-container {
+    background-color: hsl(var(--accent) / 0.2);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--accent) / 0.3);
+    color: hsl(var(--accent-foreground));
+  }
+
+  .auth-error-container {
+    background-color: hsl(var(--destructive) / 0.15);
+    border: 1px solid hsl(var(--destructive) / 0.3);
+    color: hsl(var(--destructive-foreground));
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+  }
 }
 
 /* --------- Utility Classes --------- */

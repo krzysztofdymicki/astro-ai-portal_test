@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { RELATIONSHIP_STATUS_OPTIONS } from '@/types/profile';
@@ -100,148 +99,152 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center mb-4">
-        <Link href="/dashboard" className="text-indigo-300 hover:text-indigo-200 mr-4">
-          <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Powrót</span>
-        </Link>
-        <h1 className="text-2xl font-bold text-white" data-testid="profile-title">Twój profil astralny</h1>
-      </div>
+    <div className="flex justify-center">
+      <div className="w-full max-w-3xl space-y-6">
+        <div className="flex items-center mb-4">
+          <Link href="/dashboard" className="text-indigo-300 hover:text-indigo-200 mr-4">
+            <ChevronLeft className="h-5 w-5" />
+            <span className="sr-only">Powrót</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-white" data-testid="profile-title">Twój profil astralny</h1>
+        </div>
 
-      <Card className="bg-indigo-900/40 border-indigo-300/30 text-white shadow-glow">
-        <CardHeader>
-          <CardTitle>Uzupełnij swój profil</CardTitle>
-          <CardDescription className="text-indigo-200">
-            Dzięki tym informacjom będziemy mogli przygotować dokładniejsze horoskopy i przepowiednie.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <div className="space-y-6">
           {loading.initial ? (
             <div className="flex justify-center py-8" data-testid="profile-loading-spinner">
               <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
             </div>
           ) : (
-            <BasicForm
-              onSubmit={handleSubmit}
-              submitText="Zapisz profil"
-              isLoading={isSaving}
-              className="space-y-6"
-              ariaLabel="Formularz profilu"
-            >
-              <div className="grid gap-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Imię */}
-                  <FormInput
-                    id="first_name"
-                    label={<><User className="h-4 w-4 inline mr-2" />Imię</>}
-                    value={formData.first_name}
-                    onChange={handleInputChange}
-                    placeholder="Wprowadź swoje imię"
-                    testId="first-name-input"
-                  />
-                  
-                  {/* Nazwisko */}
-                  <FormInput
-                    id="last_name"
-                    label="Nazwisko"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
-                    placeholder="Wprowadź swoje nazwisko"
-                    testId="last-name-input"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Data urodzenia */}
-                  <div className="space-y-2">
-                    <FormInput
-                      id="birth_date"
-                      label={<><CalendarIcon className="h-4 w-4 inline mr-2" />Data urodzenia</>}
-                      type="date"
-                      value={formData.birth_date}
-                      onChange={handleInputChange}
-                      testId="birth-date-input"
-                    />
-                    {zodiacSign && (
-                      <div className="flex items-center mt-1 text-xs text-indigo-300 bg-indigo-900/40 p-1 px-2 rounded border border-indigo-400/20">
-                        <span className="mr-1">{zodiacSign.symbol}</span>
-                        <span>Twój znak zodiaku: {zodiacSign.name}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Godzina urodzenia */}
-                  <FormInput
-                    id="birth_time"
-                    label={<><Clock className="h-4 w-4 inline mr-2" />Godzina urodzenia</>}
-                    type="time"
-                    value={formData.birth_time}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Miejsce urodzenia */}
-                  <FormInput
-                    id="birth_location"
-                    label={<><MapPin className="h-4 w-4 inline mr-2" />Miejsce urodzenia</>}
-                    value={formData.birth_location}
-                    onChange={handleInputChange}
-                    placeholder="Miasto, kraj"
-                  />
-                  
-                  {/* Obecna lokalizacja */}
-                  <FormInput
-                    id="current_location"
-                    label={<><MapPin className="h-4 w-4 inline mr-2" />Obecna lokalizacja</>}
-                    value={formData.current_location}
-                    onChange={handleInputChange}
-                    placeholder="Miasto, kraj"
-                  />
-                </div>
-
-                {/* Stan związku */}
-                <div className="space-y-2">
-                  <Label className="text-indigo-100">
-                    <Heart className="h-4 w-4 inline mr-2" />
-                    Stan związku
-                  </Label>
-                  
-                  {/* Dodajemy key do komponentu Select, żeby wymusić jego przeładowanie */}
-                  <Select
-                    key={selectKey}
-                    defaultValue={formData.relationship_status}
-                    onValueChange={(value) => handleSelectChange('relationship_status', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wybierz stan związku">
-                        {formData.relationship_status ? 
-                          RELATIONSHIP_STATUS_OPTIONS.find(option => option.value === formData.relationship_status)?.label || "Wybierz stan związku" 
-                          : "Wybierz stan związku"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="bg-indigo-800/30 p-4 rounded-lg border border-indigo-300/20">
-                <p className="text-indigo-100 text-sm">
-                  <span className="font-semibold">Dlaczego te informacje są ważne?</span> Każdy szczegół Twojego życia ma znaczenie w układaniu precyzyjnej mapy astralnej. Im więcej informacji nam udostępnisz, tym dokładniejsze będą Twoje horoskopy i przepowiednie. Twoje dane są bezpieczne i wykorzystywane wyłącznie do celów astrologicznych.
+            /* Półprzezroczysty kontener dla formularza */
+            <div className="mt-8 card-mystical p-6 sm:p-8">
+              <div className="space-y-2 mb-6">
+                <h3 className="text-xl text-light text-center">Uzupełnij swój profil</h3>
+                <p className="text-gray-600 text-center text-sm text-light">
+                  Dzięki tym informacjom będziemy mogli przygotować dokładniejsze horoskopy i przepowiednie.
                 </p>
               </div>
-            </BasicForm>
+              
+              <BasicForm
+                onSubmit={handleSubmit}
+                submitText="Zapisz profil"
+                isLoading={isSaving}
+                className="space-y-6"
+                ariaLabel="Formularz profilu"
+              >
+                <div className="grid gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Imię */}
+                    <FormInput
+                      id="first_name"
+                      label={<><User className="h-4 w-4 inline mr-2" />Imię</>}
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      placeholder="Wprowadź swoje imię"
+                      testId="first-name-input"
+                    />
+                    
+                    {/* Nazwisko */}
+                    <FormInput
+                      id="last_name"
+                      label="Nazwisko"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      placeholder="Wprowadź swoje nazwisko"
+                      testId="last-name-input"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Data urodzenia */}
+                    <div className="space-y-2">
+                      <FormInput
+                        id="birth_date"
+                        label={<><CalendarIcon className="h-4 w-4 inline mr-2" />Data urodzenia</>}
+                        type="date"
+                        value={formData.birth_date}
+                        onChange={handleInputChange}
+                        testId="birth-date-input"
+                      />
+                      {zodiacSign && (
+                        <div className="flex items-center mt-1 text-xs text-muted bg-accent/40 p-1 px-2 rounded border border-accent/20">
+                          <span className="mr-1">{zodiacSign.symbol}</span>
+                          <span>Twój znak zodiaku: {zodiacSign.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Godzina urodzenia */}
+                    <FormInput
+                      id="birth_time"
+                      label={<><Clock className="h-4 w-4 inline mr-2" />Godzina urodzenia</>}
+                      type="time"
+                      value={formData.birth_time}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Miejsce urodzenia */}
+                    <FormInput
+                      id="birth_location"
+                      label={<><MapPin className="h-4 w-4 inline mr-2" />Miejsce urodzenia</>}
+                      value={formData.birth_location}
+                      onChange={handleInputChange}
+                      placeholder="Miasto, kraj"
+                    />
+                    
+                    {/* Obecna lokalizacja */}
+                    <FormInput
+                      id="current_location"
+                      label={<><MapPin className="h-4 w-4 inline mr-2" />Obecna lokalizacja</>}
+                      value={formData.current_location}
+                      onChange={handleInputChange}
+                      placeholder="Miasto, kraj"
+                    />
+                  </div>
+
+                  {/* Stan związku */}
+                  <div className="space-y-2">
+                    <Label>
+                      <Heart className="h-4 w-4 inline mr-2" />
+                      Stan związku
+                    </Label>
+                    
+                    {/* Dodajemy key do komponentu Select, żeby wymusić jego przeładowanie */}
+                    <Select
+                      key={selectKey}
+                      defaultValue={formData.relationship_status}
+                      onValueChange={(value) => handleSelectChange('relationship_status', value)}
+                    >
+                      <SelectTrigger className="bg-white dark:bg-slate-800 border-input text-foreground">
+                        <SelectValue placeholder="Wybierz stan związku">
+                          {formData.relationship_status ? 
+                            RELATIONSHIP_STATUS_OPTIONS.find(option => option.value === formData.relationship_status)?.label || "Wybierz stan związku" 
+                            : "Wybierz stan związku"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border border-input">
+                        {RELATIONSHIP_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="bg-indigo-50/80 rounded-lg p-4 border border-subtle">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-semibold">Dlaczego te informacje są ważne?</span> Każdy szczegół Twojego życia ma znaczenie w układaniu precyzyjnej mapy astralnej. Im więcej informacji nam udostępnisz, tym dokładniejsze będą Twoje horoskopy i przepowiednie. Twoje dane są bezpieczne i wykorzystywane wyłącznie do celów astrologicznych.
+                  </p>
+                </div>
+              </BasicForm>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

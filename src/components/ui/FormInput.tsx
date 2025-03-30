@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { formStyles } from '@/styles/uiStyles';
 
 interface FormInputProps {
   id: string;
@@ -52,8 +53,8 @@ export const FormInput: React.FC<FormInputProps> = ({
           value={value}
           onChange={onChange}
           className={`form-input ${showPasswordToggle ? 'pr-10' : ''} 
-                     ${error ? 'error' : ''} 
-                     ${isEmpty ? 'bg-slate-50/40 border-slate-200' : ''} 
+                     ${error ? formStyles.input.error : ''} 
+                     ${isEmpty ? formStyles.input.default : formStyles.input.filled} 
                      ${className}`}
           required={required}
           placeholder={placeholder}

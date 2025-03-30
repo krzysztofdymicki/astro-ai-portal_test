@@ -135,7 +135,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="form-container space-y-6">
       <div className="space-y-2">
         <div className="mx-auto bg-indigo-600/20 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
           <KeyIcon className="h-8 w-8 text-indigo-400" />
@@ -147,7 +147,7 @@ export default function ResetPasswordPage() {
       </div>
 
       {!tokenValid ? (
-        <div className="bg-red-900/20 p-4 rounded-md border border-red-500/30 text-center">
+        <div className="auth-error-container bg-red-900/20 p-4 rounded-md border border-red-500/30 text-center">
           <p className="text-red-200">
             Nieprawidłowy lub wygasły link resetowania hasła. Użyj linku z emaila lub poproś o nowy.
           </p>
@@ -181,9 +181,8 @@ export default function ResetPasswordPage() {
               required
               testId="password-input"
               showPasswordToggle
-              className="bg-indigo-950/50 border-indigo-300/30 text-white"
               actionElement={
-                <p className="text-xs text-indigo-300">Minimum 6 znaków</p>
+                <p className="text-xs text-muted">Minimum 6 znaków</p>
               }
             />
             
@@ -200,7 +199,6 @@ export default function ResetPasswordPage() {
               required
               testId="confirm-password-input"
               showPasswordToggle
-              className="bg-indigo-950/50 border-indigo-300/30 text-white"
             />
           </BasicForm>
           
