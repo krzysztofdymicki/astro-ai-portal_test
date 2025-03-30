@@ -22,6 +22,17 @@ export function formatTime(date: Date): string {
   });
 }
 
+// Formatowanie czasu ze stringa (format HH:MM:SS)
+export function formatTimeString(time: string): string {
+  return time.substring(0, 5); // Format HH:MM
+}
+
+// Formatowanie dnia tygodnia
+export function formatDayOfWeek(day: number): string {
+  const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+  return days[day];
+}
+
 // Formatowanie daty i czasu w czytelnym formacie
 export function formatDateTime(date: Date): string {
   return `${formatDate(date)}, ${formatTime(date)}`;

@@ -7,7 +7,11 @@ import {
   CreditCard, 
   Settings, 
   HelpCircle, 
-  LogOut
+  LogOut,
+  Moon,
+  Star,
+  PlusCircle,
+  HelpingHand
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
@@ -20,6 +24,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { UserProvider, useUser } from '@/contexts/UserContext';
 import LoadingScreen from '@/components/ui/loading-screen';
@@ -73,7 +81,7 @@ function DashboardHeader() {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mt-1 border-indigo-300/50 bg-indigo-900/95 text-white backdrop-blur-sm" align="end">
+              <DropdownMenuContent className="w-64 mt-1 border-indigo-300/50 bg-indigo-900/95 text-white backdrop-blur-sm" align="end">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{userName}</p>
@@ -81,12 +89,54 @@ function DashboardHeader() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Kredyty */}
                 <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80">
                   <CreditCard className="h-4 w-4 text-indigo-300" />
                   <span>Kredyty:</span>
                   <span className="ml-auto font-bold">{credits?.balance || 0}</span>
                 </DropdownMenuItem>
+                
+                {/* Doładuj kredyty */}
+                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                  <Link href="/dashboard/credits">
+                    <PlusCircle className="h-4 w-4 text-green-300" />
+                    <span>Doładuj kredyty</span>
+                  </Link>
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Opcje astralne */}
+                <DropdownMenuGroup>
+                  {/* Horoskopy */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/horoscopes">
+                      <Moon className="h-4 w-4 text-indigo-300" />
+                      <span>Twoje horoskopy</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Zamów horoskop */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/horoscopes/order">
+                      <Star className="h-4 w-4 text-yellow-300" />
+                      <span>Zamów horoskop</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {/* Pytania */}
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
+                    <Link href="/dashboard/questions">
+                      <HelpingHand className="h-4 w-4 text-indigo-300" />
+                      <span>Pytania i odpowiedzi</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                
+                <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Ustawienia i pomoc */}
                 <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-indigo-800/80" asChild>
                   <Link href="/dashboard/profile">
                     <User className="h-4 w-4 text-indigo-300" />
@@ -101,7 +151,10 @@ function DashboardHeader() {
                   <HelpCircle className="h-4 w-4 text-indigo-300" />
                   <span>Pomoc</span>
                 </DropdownMenuItem>
+                
                 <DropdownMenuSeparator className="bg-indigo-700/50" />
+                
+                {/* Wyloguj */}
                 <DropdownMenuItem 
                   className="flex items-center gap-2 cursor-pointer text-red-300 hover:bg-red-900/30 hover:text-red-200"
                   onClick={handleSignOut}
