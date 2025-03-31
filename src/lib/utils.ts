@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Formatowanie daty w czytelnym formacie
-export function formatDate(date: Date): string {
+export function formatDate(dateInput: string | Date): string {
+  if (!dateInput) return '';
+  
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
   return date.toLocaleDateString('pl-PL', {
     day: 'numeric',
     month: 'long',

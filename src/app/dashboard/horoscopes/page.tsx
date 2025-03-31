@@ -105,9 +105,9 @@ export default function HoroscopesPage() {
             ) : (
               <div>
                 {/* Wszystkie horoskopy */}
-                <TabsContent value="all" className="space-y-8 mt-0 h-full">
+                <TabsContent value="all" className="mt-0">
                   {horoscopes.length === 0 && pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
                       <div>
                         <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak horoskopów</h3>
@@ -125,7 +125,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-10">
+                    <div className="space-y-10 py-4">
                       {/* Sekcja oczekujących zamówień */}
                       {pendingOrders.length > 0 && (
                         <section>
@@ -154,9 +154,9 @@ export default function HoroscopesPage() {
                 </TabsContent>
                 
                 {/* Oczekujące zamówienia */}
-                <TabsContent value="pending" className="mt-0 h-full">
+                <TabsContent value="pending" className="mt-0">
                   {pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
                       <div>
                         <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak oczekujących zamówień</h3>
@@ -174,7 +174,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {pendingOrders.map((order) => (
                         <HoroscopeOrderCard key={order.id} order={order} />
                       ))}
@@ -183,9 +183,9 @@ export default function HoroscopesPage() {
                 </TabsContent>
                 
                 {/* Dzienne horoskopy */}
-                <TabsContent value="daily" className="mt-0 h-full">
+                <TabsContent value="daily" className="mt-0">
                   {horoscopes.filter(h => h.horoscope_type === 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
                       <div>
                         <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak dziennych horoskopów</h3>
@@ -203,7 +203,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {horoscopes
                         .filter(h => h.horoscope_type === 'daily')
                         .map((horoscope) => (
@@ -214,9 +214,9 @@ export default function HoroscopesPage() {
                 </TabsContent>
                 
                 {/* Pozostałe horoskopy */}
-                <TabsContent value="other" className="mt-0 h-full">
+                <TabsContent value="other" className="mt-0">
                   {horoscopes.filter(h => h.horoscope_type !== 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between h-[420px]">
+                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
                       <div>
                         <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
                         <h3 className="text-2xl text-foreground mb-3">Brak innych horoskopów</h3>
@@ -234,7 +234,7 @@ export default function HoroscopesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {horoscopes
                         .filter(h => h.horoscope_type !== 'daily')
                         .map((horoscope) => (
