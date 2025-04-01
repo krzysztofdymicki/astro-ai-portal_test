@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
+import { ChatCompletion } from 'openai/resources/chat/completions';
 
 // Inicjalizacja klienta OpenAI
 const openai = new OpenAI({
@@ -195,7 +196,7 @@ Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjazn
 
     // 11. Wysłanie zapytania do OpenAI
     console.log(`Generowanie treści horoskopu dla zamówienia ${orderId}`);
-    const completion: OpenAI.Chat.Completions.ChatCompletion = await openai.chat.completions.create({
+    const completion: ChatCompletion = await openai.chat.completions.create({
       model: "gpt-4o", // lub inny wybrany model
       messages: [
         { role: "system", content: "Jesteś profesjonalnym astrologiem, który tworzy spersonalizowane horoskopy w języku polskim." },

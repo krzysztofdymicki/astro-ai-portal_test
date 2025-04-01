@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react';
+import React from 'react';
 
 export default function HoroscopesLayout({
   children,
