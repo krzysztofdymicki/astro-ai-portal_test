@@ -25,7 +25,7 @@ export interface Horoscope {
   id: string;
   user_id: string;
   astrologer_id: string;
-  astrologer?: Astrologer;
+  astrologer?: Astrologer | any;
   order_id: string;
   horoscope_type: HoroscopeType;
   content: string;
@@ -41,7 +41,7 @@ export interface HoroscopeOrder {
   id: string;
   user_id: string;
   astrologer_id: string;
-  astrologer?: Astrologer;
+  astrologer?: Astrologer | any;
   horoscope_type: HoroscopeType;
   user_notes?: string;
   status: HoroscopeOrderStatus;

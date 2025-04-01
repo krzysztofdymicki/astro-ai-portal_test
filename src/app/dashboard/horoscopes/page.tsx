@@ -10,8 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Clock, Star } from 'lucide-react';
 import { Horoscope, HoroscopeOrder } from '@/types/horoscopes';
-import { HoroscopeCard } from '@/components/ui/horoscopes/HoroscopeCard';
-import { HoroscopeOrderCard } from '@/components/ui/horoscopes/HoroscopeOrderCard';
+import { HoroscopeItem } from '@/components/ui/horoscopes/HoroscopeItem';
 
 export default function HoroscopesPage() {
   const supabase = createClient();
@@ -73,6 +72,63 @@ export default function HoroscopesPage() {
     fetchHoroscopes();
   }, [profile, supabase]);
   
+  // Wszystkie elementy (zamówienia + gotowe horoskopy) posortowane chronologicznie
+  const allItems = [...pendingOrders, ...horoscopes].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+  
+  // Filtrowanie horoskopów dziennych
+  const dailyHoroscopes = horoscopes.filter(h => h.horoscope_type === 'daily');
+  
+  // Filtrowanie pozostałych horoskopów (nie dziennych)
+  const otherHoroscopes = horoscopes.filter(h => h.horoscope_type !== 'daily');
+  
+  const renderEmptyState = (type: 'all' | 'pending' | 'daily' | 'other') => {
+    let icon, title, description, variant;
+    
+    switch (type) {
+      case 'pending':
+        icon = <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />;
+        title = "Brak oczekujących zamówień";
+        description = "Nie masz obecnie żadnych oczekujących zamówień. Zamów nowy horoskop, aby dowiedzieć się, co gwiazdy mają dla Ciebie w zanadrzu.";
+        break;
+      case 'daily':
+        icon = <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />;
+        title = "Brak dziennych horoskopów";
+        description = "Nie masz jeszcze żadnych dziennych horoskopów. Zamów swój pierwszy dzienny horoskop, aby poznać wpływ gwiazd na nadchodzący dzień.";
+        break;
+      case 'other':
+        icon = <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />;
+        title = "Brak innych horoskopów";
+        description = "Nie masz jeszcze horoskopów tygodniowych, miesięcznych ani rocznych. Zamów horoskop na dłuższy okres, aby poznać swoje długoterminowe perspektywy.";
+        break;
+      default:
+        icon = <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />;
+        title = "Brak horoskopów";
+        description = "Nie masz jeszcze żadnych horoskopów. Zamów swój pierwszy horoskop, aby odkryć, co gwiazdy mają dla Ciebie w zanadrzu.";
+    }
+    
+    return (
+      <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
+        <div>
+          {icon}
+          <h3 className="text-2xl text-foreground mb-3">{title}</h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {description}
+          </p>
+        </div>
+        <div className="mt-8">
+          <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
+            <Link href="/dashboard/horoscopes/order">
+              <Star className="h-5 w-5 mr-2" />
+              Zamów horoskop
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
   return (
     <div className="max-w-6xl mx-auto">
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -106,49 +162,13 @@ export default function HoroscopesPage() {
               <div>
                 {/* Wszystkie horoskopy */}
                 <TabsContent value="all" className="mt-0">
-                  {horoscopes.length === 0 && pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
-                      <div>
-                        <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
-                        <h3 className="text-2xl text-foreground mb-3">Brak horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Nie masz jeszcze żadnych horoskopów. Zamów swój pierwszy horoskop, aby odkryć, co gwiazdy mają dla Ciebie w zanadrzu.
-                        </p>
-                      </div>
-                      <div className="mt-8">
-                        <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
-                          <Link href="/dashboard/horoscopes/order">
-                            <Star className="h-5 w-5 mr-2" />
-                            Zamów horoskop
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                  {allItems.length === 0 ? (
+                    renderEmptyState('all')
                   ) : (
-                    <div className="space-y-10 py-4">
-                      {/* Sekcja oczekujących zamówień */}
-                      {pendingOrders.length > 0 && (
-                        <section>
-                          <h2 className="text-2xl font-semibold text-white mystical-glow mb-6">Oczekujące zamówienia</h2>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {pendingOrders.map((order) => (
-                              <HoroscopeOrderCard key={order.id} order={order} />
-                            ))}
-                          </div>
-                        </section>
-                      )}
-                      
-                      {/* Sekcja gotowych horoskopów */}
-                      {horoscopes.length > 0 && (
-                        <section>
-                          <h2 className="text-2xl font-semibold text-white mystical-glow mb-6">Twoje horoskopy</h2>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {horoscopes.map((horoscope) => (
-                              <HoroscopeCard key={horoscope.id} horoscope={horoscope} />
-                            ))}
-                          </div>
-                        </section>
-                      )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
+                      {allItems.map((item) => (
+                        <HoroscopeItem key={item.id} item={item} />
+                      ))}
                     </div>
                   )}
                 </TabsContent>
@@ -156,27 +176,11 @@ export default function HoroscopesPage() {
                 {/* Oczekujące zamówienia */}
                 <TabsContent value="pending" className="mt-0">
                   {pendingOrders.length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
-                      <div>
-                        <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
-                        <h3 className="text-2xl text-foreground mb-3">Brak oczekujących zamówień</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Nie masz obecnie żadnych oczekujących zamówień. Zamów nowy horoskop, aby dowiedzieć się, co gwiazdy mają dla Ciebie w zanadrzu.
-                        </p>
-                      </div>
-                      <div className="mt-8">
-                        <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
-                          <Link href="/dashboard/horoscopes/order">
-                            <Star className="h-5 w-5 mr-2" />
-                            Zamów horoskop
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                    renderEmptyState('pending')
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {pendingOrders.map((order) => (
-                        <HoroscopeOrderCard key={order.id} order={order} />
+                        <HoroscopeItem key={order.id} item={order} />
                       ))}
                     </div>
                   )}
@@ -184,62 +188,26 @@ export default function HoroscopesPage() {
                 
                 {/* Dzienne horoskopy */}
                 <TabsContent value="daily" className="mt-0">
-                  {horoscopes.filter(h => h.horoscope_type === 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
-                      <div>
-                        <Clock className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
-                        <h3 className="text-2xl text-foreground mb-3">Brak dziennych horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Nie masz jeszcze żadnych dziennych horoskopów. Zamów swój pierwszy dzienny horoskop, aby poznać wpływ gwiazd na nadchodzący dzień.
-                        </p>
-                      </div>
-                      <div className="mt-8">
-                        <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
-                          <Link href="/dashboard/horoscopes/order">
-                            <Star className="h-5 w-5 mr-2" />
-                            Zamów horoskop
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                  {dailyHoroscopes.length === 0 ? (
+                    renderEmptyState('daily')
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
-                      {horoscopes
-                        .filter(h => h.horoscope_type === 'daily')
-                        .map((horoscope) => (
-                          <HoroscopeCard key={horoscope.id} horoscope={horoscope} />
-                        ))}
+                      {dailyHoroscopes.map((horoscope) => (
+                        <HoroscopeItem key={horoscope.id} item={horoscope} />
+                      ))}
                     </div>
                   )}
                 </TabsContent>
                 
                 {/* Pozostałe horoskopy */}
                 <TabsContent value="other" className="mt-0">
-                  {horoscopes.filter(h => h.horoscope_type !== 'daily').length === 0 ? (
-                    <div className="text-center pt-12 pb-6 card-mystical p-6 flex flex-col items-center justify-between min-h-[420px]">
-                      <div>
-                        <Sparkles className="h-16 w-16 mx-auto text-indigo-400 mb-6" />
-                        <h3 className="text-2xl text-foreground mb-3">Brak innych horoskopów</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Nie masz jeszcze horoskopów tygodniowych, miesięcznych ani rocznych. Zamów horoskop na dłuższy okres, aby poznać swoje długoterminowe perspektywy.
-                        </p>
-                      </div>
-                      <div className="mt-8">
-                        <Button asChild className="btn-primary px-6 py-3 rounded-lg text-white shadow-mystical hover:shadow-mystical-hover transition-all">
-                          <Link href="/dashboard/horoscopes/order">
-                            <Star className="h-5 w-5 mr-2" />
-                            Zamów horoskop
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                  {otherHoroscopes.length === 0 ? (
+                    renderEmptyState('other')
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
-                      {horoscopes
-                        .filter(h => h.horoscope_type !== 'daily')
-                        .map((horoscope) => (
-                          <HoroscopeCard key={horoscope.id} horoscope={horoscope} />
-                        ))}
+                      {otherHoroscopes.map((horoscope) => (
+                        <HoroscopeItem key={horoscope.id} item={horoscope} />
+                      ))}
                     </div>
                   )}
                 </TabsContent>
