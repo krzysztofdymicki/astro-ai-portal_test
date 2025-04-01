@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Horoscope, HoroscopeOrder, formatHoroscopeType, formatOrderStatus } from '@/types/horoscopes';
 import { Star, Calendar, Clock, FileText, ChevronRight, Sparkles } from 'lucide-react';
@@ -6,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusIcon } from '@/lib/horoscope-utils';
+import Image from 'next/image';
 
 // Typ generyczny pozwalający na przekazanie zarówno Horoscope jak i HoroscopeOrder
 type HoroscopeItemProps = {
@@ -19,10 +19,10 @@ const isHoroscope = (item: Horoscope | HoroscopeOrder): item is Horoscope => {
   return 'content' in item && 'title' in item;
 };
 
-export function HoroscopeItem({ item, variant = 'default', onRefresh }: HoroscopeItemProps) {
+export function HoroscopeItem({ item }: HoroscopeItemProps) {
   const router = useRouter();
   const isPending = !isHoroscope(item);
-  const astrologer = (item.astrologer as any) || {};
+  const astrologer = (item.astrologer as { display_name?: string; profile_image_url?: string }) || {};
   
   // Wspólne dane niezależnie od typu
   const itemType = isHoroscope(item) ? item.horoscope_type : item.horoscope_type;
@@ -145,9 +145,11 @@ export function HoroscopeItem({ item, variant = 'default', onRefresh }: Horoscop
                 <div className="flex items-center">
                   {astrologer?.profile_image_url ? (
                     <div className="relative h-8 w-8 rounded-full overflow-hidden mr-2 border border-indigo-400/30">
-                      <img
+                      <Image
                         src={astrologer.profile_image_url}
                         alt={astrologer.display_name || 'Astrolog'}
+                        width={32}
+                        height={32}
                         className="object-cover w-full h-full"
                       />
                     </div>

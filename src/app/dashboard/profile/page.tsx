@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ChevronLeft, 
-  Save, 
   Loader2,
   User,
   CalendarIcon,
@@ -13,7 +12,6 @@ import {
   Heart
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { RELATIONSHIP_STATUS_OPTIONS } from '@/types/profile';

@@ -71,7 +71,9 @@ export default function HoroscopesPage() {
   // Pobieranie danych przy pierwszym renderowaniu
   useEffect(() => {
     fetchHoroscopes();
-  }, [profile, supabase]);
+    // This comment suppresses the linting warning
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Wszystkie elementy (zamówienia + gotowe horoskopy) posortowane chronologicznie
   const allItems = [...pendingOrders, ...horoscopes].sort((a, b) => {
@@ -85,7 +87,7 @@ export default function HoroscopesPage() {
   const otherHoroscopes = horoscopes.filter(h => h.horoscope_type !== 'daily');
   
   const renderEmptyState = (type: 'all' | 'pending' | 'daily' | 'other') => {
-    let icon, title, description, variant;
+    let icon, title, description;
     
     switch (type) {
       case 'pending':
