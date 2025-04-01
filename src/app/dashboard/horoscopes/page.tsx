@@ -22,53 +22,54 @@ export default function HoroscopesPage() {
   const [pendingOrders, setPendingOrders] = useState<HoroscopeOrder[]>([]);
   
   // Pobieranie horoskopów użytkownika
-  useEffect(() => {
-    const fetchHoroscopes = async () => {
-      if (!profile?.id) return;
-      
-      setLoading(true);
-      
-      try {
-        // Pobierz gotowe horoskopy
-        const { data: horoscopesData, error: horoscopesError } = await supabase
-          .from('horoscopes')
-          .select(`
-            *,
-            astrologer:astrologers(display_name, profile_image_url)
-          `)
-          .eq('user_id', profile.id)
-          .order('created_at', { ascending: false });
-          
-        if (horoscopesError) throw horoscopesError;
-        
-        if (horoscopesData) {
-          setHoroscopes(horoscopesData);
-        }
-        
-        // Pobierz oczekujące zamówienia
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('horoscope_orders')
-          .select(`
-            *,
-            astrologer:astrologers(display_name, profile_image_url)
-          `)
-          .eq('user_id', profile.id)
-          .not('status', 'eq', 'completed')
-          .order('created_at', { ascending: false });
-          
-        if (ordersError) throw ordersError;
-        
-        if (ordersData) {
-          setPendingOrders(ordersData);
-        }
-      } catch (error) {
-        console.error('Error fetching horoscopes:', error);
-        toast.error('Nie udało się pobrać horoskopów');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHoroscopes = async () => {
+    if (!profile?.id) return;
     
+    setLoading(true);
+    
+    try {
+      // Pobierz gotowe horoskopy
+      const { data: horoscopesData, error: horoscopesError } = await supabase
+        .from('horoscopes')
+        .select(`
+          *,
+          astrologer:astrologers(display_name, profile_image_url)
+        `)
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+        
+      if (horoscopesError) throw horoscopesError;
+      
+      if (horoscopesData) {
+        setHoroscopes(horoscopesData);
+      }
+      
+      // Pobierz oczekujące zamówienia
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('horoscope_orders')
+        .select(`
+          *,
+          astrologer:astrologers(display_name, profile_image_url)
+        `)
+        .eq('user_id', profile.id)
+        .not('status', 'eq', 'completed')
+        .order('created_at', { ascending: false });
+        
+      if (ordersError) throw ordersError;
+      
+      if (ordersData) {
+        setPendingOrders(ordersData);
+      }
+    } catch (error) {
+      console.error('Error fetching horoscopes:', error);
+      toast.error('Nie udało się pobrać horoskopów');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Pobieranie danych przy pierwszym renderowaniu
+  useEffect(() => {
     fetchHoroscopes();
   }, [profile, supabase]);
   
@@ -167,7 +168,11 @@ export default function HoroscopesPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {allItems.map((item) => (
-                        <HoroscopeItem key={item.id} item={item} />
+                        <HoroscopeItem 
+                          key={item.id} 
+                          item={item} 
+                          onRefresh={fetchHoroscopes}
+                        />
                       ))}
                     </div>
                   )}
@@ -180,7 +185,11 @@ export default function HoroscopesPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {pendingOrders.map((order) => (
-                        <HoroscopeItem key={order.id} item={order} />
+                        <HoroscopeItem 
+                          key={order.id} 
+                          item={order} 
+                          onRefresh={fetchHoroscopes}
+                        />
                       ))}
                     </div>
                   )}
@@ -193,7 +202,11 @@ export default function HoroscopesPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {dailyHoroscopes.map((horoscope) => (
-                        <HoroscopeItem key={horoscope.id} item={horoscope} />
+                        <HoroscopeItem 
+                          key={horoscope.id} 
+                          item={horoscope} 
+                          onRefresh={fetchHoroscopes}
+                        />
                       ))}
                     </div>
                   )}
@@ -206,7 +219,11 @@ export default function HoroscopesPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4">
                       {otherHoroscopes.map((horoscope) => (
-                        <HoroscopeItem key={horoscope.id} item={horoscope} />
+                        <HoroscopeItem 
+                          key={horoscope.id} 
+                          item={horoscope} 
+                          onRefresh={fetchHoroscopes}
+                        />
                       ))}
                     </div>
                   )}

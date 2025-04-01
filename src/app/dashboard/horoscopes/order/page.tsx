@@ -132,7 +132,7 @@ export default function OrderHoroscopePage() {
     setSubmitting(true);
     
     try {
-      // Create order in the database - usuwamy problematyczne pole
+      // 1. Create order in the database
       const { data: orderData, error: orderError } = await supabase
         .from('horoscope_orders')
         .insert({
@@ -148,14 +148,28 @@ export default function OrderHoroscopePage() {
         
       if (orderError) throw orderError;
       
-      // Refresh user data to update credit balance
+      // 2. Initiate the generation process (but don't wait for it)
+      fetch('/api/horoscopes/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: orderData.id,
+        }),
+      }).catch(err => {
+        // Just log any errors but don't block the user flow
+        console.error('Error initiating generation:', err);
+      });
+      
+      // 3. Refresh user data to update credit balance
       await refreshUserData();
       
       toast.success('Zamówienie zostało przyjęte', {
         description: 'Astrolog przygotuje Twój horoskop w najbliższym czasie.'
       });
       
-      // Redirect to horoscopes page
+      // 4. Redirect to horoscopes page
       router.push('/dashboard/horoscopes');
       
     } catch (error) {
@@ -428,6 +442,12 @@ export default function OrderHoroscopePage() {
                 </p>
               </div>
             )}
+
+            <div className="bg-indigo-800/40 border border-indigo-600/30 p-3 rounded-md mb-4">
+              <p className="text-indigo-200 text-sm">
+                <span className="font-medium">Informacja:</span> Opracowanie spersonalizowanego horoskopu przez astrologa może potrwać od kilku minut do kilku godzin. Po zakończeniu pracy, horoskop pojawi się automatycznie na Twojej liście.
+              </p>
+            </div>
             
             <Button
               className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium"

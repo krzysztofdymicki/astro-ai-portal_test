@@ -11,6 +11,7 @@ import { StatusIcon } from '@/lib/horoscope-utils';
 type HoroscopeItemProps = {
   item: Horoscope | HoroscopeOrder;
   variant?: 'default' | 'compact';
+  onRefresh?: () => void;
 };
 
 // Funkcja pomocnicza do sprawdzania typu obiektu
@@ -18,7 +19,7 @@ const isHoroscope = (item: Horoscope | HoroscopeOrder): item is Horoscope => {
   return 'content' in item && 'title' in item;
 };
 
-export function HoroscopeItem({ item, variant = 'default' }: HoroscopeItemProps) {
+export function HoroscopeItem({ item, variant = 'default', onRefresh }: HoroscopeItemProps) {
   const router = useRouter();
   const isPending = !isHoroscope(item);
   const astrologer = (item.astrologer as any) || {};

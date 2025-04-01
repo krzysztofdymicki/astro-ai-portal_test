@@ -406,3 +406,6 @@ FROM astrologers WHERE display_name = 'Kasandra';
 INSERT INTO astrologer_availability (astrologer_id, day_of_week, start_time, end_time)
 SELECT id, 6, '10:00', '14:00'
 FROM astrologers WHERE display_name = 'Kasandra';
+
+-- SQL to add the column (if needed)
+ALTER TABLE horoscope_orders ADD COLUMN horoscope_id UUID REFERENCES horoscopes(id);

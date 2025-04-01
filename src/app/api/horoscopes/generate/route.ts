@@ -1,4 +1,4 @@
-// /app/api/horoscopes/generate/route.ts
+// /app/api/horoscopes/generate-background/route.ts
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
@@ -20,83 +20,90 @@ export async function POST(request: Request) {
       );
     }
 
+    // Rozpocznij przetwarzanie w tle i od razu zwróć odpowiedź
+    backgroundProcessOrder(orderId).catch(err => {
+      console.error('Background processing error:', err);
+    });
+
+    // Natychmiastowa odpowiedź dla klienta
+    return NextResponse.json({
+      success: true,
+      message: 'Proces generowania horoskopu został rozpoczęty w tle',
+    });
+
+  } catch (error: any) {
+    console.error('Błąd inicjacji procesu generowania horoskopu:', error);
+    return NextResponse.json(
+      { error: 'Wystąpił nieoczekiwany błąd', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// Funkcja do przetwarzania zamówienia w tle
+async function backgroundProcessOrder(orderId: string) {
+  console.log(`Rozpoczynam przetwarzanie zamówienia ${orderId} w tle`);
+  
+  try {
     // Inicjalizacja klienta Supabase
     const supabase = await createClient();
 
-    // Pobranie danych sesji użytkownika
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Nieautoryzowany dostęp' },
-        { status: 401 }
-      );
-    }
-
-    // Pobranie danych zamówienia
+    // 1. Pobierz dane zamówienia
     const { data: orderData, error: orderError } = await supabase
       .from('horoscope_orders')
       .select('*')
       .eq('id', orderId)
-      .eq('user_id', session.user.id)
       .single();
 
     if (orderError || !orderData) {
-      return NextResponse.json(
-        { error: 'Nie znaleziono zamówienia' },
-        { status: 404 }
-      );
+      console.error('Nie znaleziono zamówienia:', orderError);
+      return;
     }
 
-    // Sprawdzenie statusu zamówienia
+    // 2. Sprawdź, czy zamówienie jest w stanie "pending"
     if (orderData.status !== 'pending') {
-      return NextResponse.json(
-        { error: 'Zamówienie jest już w trakcie realizacji lub zostało zrealizowane' },
-        { status: 400 }
-      );
+      console.log(`Zamówienie ${orderId} jest już w trakcie realizacji lub zostało zrealizowane`);
+      return;
     }
 
-    // Aktualizacja statusu zamówienia na "processing"
+    // 3. Ustaw status na "processing"
     const { error: updateError } = await supabase
       .from('horoscope_orders')
       .update({ status: 'processing' })
       .eq('id', orderId);
 
     if (updateError) {
-      return NextResponse.json(
-        { error: 'Nie udało się zaktualizować statusu zamówienia' },
-        { status: 500 }
-      );
+      console.error('Nie udało się zaktualizować statusu zamówienia:', updateError);
+      return;
     }
 
-    // Pobranie danych użytkownika
+    // 4. Pobierz dane użytkownika
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', orderData.user_id)
       .single();
 
     if (profileError || !profileData) {
-      return NextResponse.json(
-        { error: 'Nie znaleziono profilu użytkownika' },
-        { status: 404 }
-      );
+      console.error('Nie znaleziono profilu użytkownika:', profileError);
+      return;
     }
 
-    // Pobranie znaku zodiaku użytkownika
+    // 5. Pobierz znak zodiaku użytkownika
     const { data: zodiacData, error: zodiacError } = await supabase
       .from('zodiac_signs')
       .select('*')
       .eq('id', profileData.zodiac_sign_id)
       .single();
 
-    // Pobranie odpowiedzi użytkownika na pytania profilowe
+    // 6. Pobierz odpowiedzi użytkownika na pytania profilowe
     const { data: answersData, error: answersError } = await supabase
       .from('profile_answers')
       .select(`
         *,
         profile_questions(question)
       `)
-      .eq('user_id', session.user.id);
+      .eq('user_id', orderData.user_id);
 
     // Przygotowanie informacji o odpowiedziach dla promptu
     let answersInfo = '';
@@ -106,7 +113,7 @@ export async function POST(request: Request) {
       }).join('\n\n');
     }
 
-    // Przygotowanie informacji o użytkowniku na podstawie profilu
+    // 7. Przygotowanie informacji o użytkowniku na podstawie profilu
     const userInfo = {
       firstName: profileData.first_name || 'Użytkownik',
       lastName: profileData.last_name || '',
@@ -119,7 +126,7 @@ export async function POST(request: Request) {
       zodiacElement: zodiacData ? zodiacData.element : 'Nieznany',
     };
 
-    // Przygotowanie danych dla horoskopu
+    // 8. Przygotowanie danych dla horoskopu
     const horoscopeType = orderData.horoscope_type;
     const horoscopeTypes = {
       daily: 'dzień',
@@ -131,7 +138,7 @@ export async function POST(request: Request) {
 
     const period = horoscopeTypes[horoscopeType as keyof typeof horoscopeTypes] || 'okres';
 
-    // Ustalenie okresów ważności horoskopu
+    // 9. Ustalenie okresów ważności horoskopu
     let validFrom = new Date();
     let validTo = new Date();
     
@@ -154,7 +161,7 @@ export async function POST(request: Request) {
         break;
     }
 
-    // Przygotowanie promptu dla LLM
+    // 10. Przygotowanie promptu dla LLM
     const prompt = `Wygeneruj horoskop ${horoscopeType} dla użytkownika o następujących cechach:
     
 Imię: ${userInfo.firstName}
@@ -183,9 +190,15 @@ Horoskop powinien być spersonalizowany i obejmować następujące aspekty:
 
 Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjaznym tonie. Tekst powinien być sformatowany z użyciem znaczników HTML (paragrafy <p>, nagłówki <h3>, etc.) dla lepszej czytelności. Długość horoskopu powinna być odpowiednia do jego typu - dłuższy dla horoskopów miesięcznych, rocznych i życiowych; krótszy dla dziennych i tygodniowych.`;
 
-    // Wysłanie zapytania do OpenAI
+    // Wprowadź sztuczne opóźnienie (min. 1 minuta, max. 5 minut)
+    const delayMinutes = Math.floor(Math.random() * 4) + 1; // 1-5 minut
+    console.log(`Sztuczne opóźnienie: ${delayMinutes} minut(y) dla zamówienia ${orderId}`);
+    await new Promise(resolve => setTimeout(resolve, delayMinutes * 60 * 100));
+
+    // 11. Wysłanie zapytania do OpenAI
+    console.log(`Generowanie treści horoskopu dla zamówienia ${orderId}`);
     const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo", // lub inny wybrany model
+      model: "gpt-4o", // lub inny wybrany model
       messages: [
         { role: "system", content: "Jesteś profesjonalnym astrologiem, który tworzy spersonalizowane horoskopy w języku polskim." },
         { role: "user", content: prompt }
@@ -193,42 +206,41 @@ Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjazn
       temperature: 0.7,
     });
 
-    // Uzyskanie wygenerowanej treści horoskopu
+    // 12. Uzyskanie wygenerowanej treści horoskopu
     const horoscopeContent = completion.choices[0]?.message?.content || 'Nie udało się wygenerować horoskopu.';
 
-    // Tytuł horoskopu
+    // 13. Tytuł horoskopu
     const horoscopeTitle = `Horoskop ${
       horoscopeType === 'daily' ? 'dzienny' :
       horoscopeType === 'weekly' ? 'tygodniowy' :
       horoscopeType === 'monthly' ? 'miesięczny' :
       horoscopeType === 'yearly' ? 'roczny' : 'życiowy'
-    } dla znaku ${userInfo.zodiacSign}`;
+    }`;
 
-    // Zapisanie horoskopu w bazie danych
+    // 14. Zapisanie horoskopu w bazie danych
+    console.log(`Zapisywanie horoskopu dla zamówienia ${orderId}`);
     const { data: horoscopeData, error: horoscopeError } = await supabase
       .from('horoscopes')
       .insert({
         order_id: orderId,
-        user_id: session.user.id,
+        user_id: orderData.user_id,
         astrologer_id: orderData.astrologer_id,
         horoscope_type: horoscopeType,
         title: horoscopeTitle,
         content: horoscopeContent,
         valid_from: validFrom.toISOString().split('T')[0],
-        valid_to: validTo ? validTo.toISOString().split('T')[0] : null,
-        zodiac_sign: userInfo.zodiacSign
+        valid_to: validTo ? validTo.toISOString().split('T')[0] : null
+        // zodiac_sign field removed as it's redundant with user profile data
       })
       .select()
       .single();
 
     if (horoscopeError) {
-      return NextResponse.json(
-        { error: 'Nie udało się zapisać horoskopu', details: horoscopeError },
-        { status: 500 }
-      );
+      console.error('Nie udało się zapisać horoskopu:', horoscopeError);
+      return;
     }
 
-    // Aktualizacja statusu zamówienia na "completed"
+    // 15. Aktualizacja statusu zamówienia na "completed"
     const { error: completeError } = await supabase
       .from('horoscope_orders')
       .update({ 
@@ -239,23 +251,13 @@ Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjazn
       .eq('id', orderId);
 
     if (completeError) {
-      return NextResponse.json(
-        { error: 'Nie udało się zaktualizować statusu zamówienia', details: completeError },
-        { status: 500 }
-      );
+      console.error('Nie udało się zaktualizować statusu zamówienia:', completeError);
+      return;
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Horoskop został pomyślnie wygenerowany',
-      horoscopeId: horoscopeData.id
-    });
+    console.log(`Zakończono przetwarzanie zamówienia ${orderId}`);
 
-  } catch (error: any) {
-    console.error('Błąd podczas generowania horoskopu:', error);
-    return NextResponse.json(
-      { error: 'Wystąpił nieoczekiwany błąd', details: error.message },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error(`Błąd podczas przetwarzania zamówienia ${orderId} w tle:`, error);
   }
 }

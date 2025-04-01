@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
@@ -20,9 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default function HoroscopeDetailPage({ params }: PageProps) {
@@ -31,6 +29,9 @@ export default function HoroscopeDetailPage({ params }: PageProps) {
   const [horoscope, setHoroscope] = useState<Horoscope | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Unwrap params Promise using React.use()
+  const { id } = use(params);
 
   useEffect(() => {
     const fetchHoroscope = async () => {
@@ -44,7 +45,7 @@ export default function HoroscopeDetailPage({ params }: PageProps) {
             *,
             astrologer:astrologers(display_name, profile_image_url)
           `)
-          .eq('id', params.id)
+          .eq('id', id)
           .single();
 
         if (error) throw error;
@@ -63,10 +64,10 @@ export default function HoroscopeDetailPage({ params }: PageProps) {
       }
     };
 
-    if (params.id) {
+    if (id) {
       fetchHoroscope();
     }
-  }, [params.id, supabase]);
+  }, [id, supabase]);
 
   if (loading) {
     return (
