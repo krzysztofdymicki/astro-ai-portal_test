@@ -90,25 +90,23 @@ async function backgroundProcessOrder(orderId: string) {
     }
 
     // 5. Pobierz znak zodiaku użytkownika
-    const { data: zodiacData, error: zodiacError } = await supabase
+    const { data: zodiacData } = await supabase
       .from('zodiac_signs')
       .select('*')
-      .eq('id', profileData.zodiac_sign_id)
+      .eq('slug', profileData.zodiac_sign)
       .single();
 
     // 6. Pobierz odpowiedzi użytkownika na pytania profilowe
-    const { data: answersData, error: answersError } = await supabase
+    const { data: userAnswers } = await supabase
       .from('profile_answers')
-      .select(`
-        *,
-        profile_questions(question)
-      `)
-      .eq('user_id', orderData.user_id);
+      .select('*')
+      .eq('user_id', orderData.user_id)
+      .single();
 
     // Przygotowanie informacji o odpowiedziach dla promptu
     let answersInfo = '';
-    if (answersData && answersData.length > 0) {
-      answersInfo = answersData.map((answer: any) => {
+    if (userAnswers && userAnswers.length > 0) {
+      answersInfo = userAnswers.map((answer: any) => {
         return `Pytanie: ${answer.profile_questions.question}\nOdpowiedź: ${answer.answer}`;
       }).join('\n\n');
     }
@@ -139,7 +137,7 @@ async function backgroundProcessOrder(orderId: string) {
     const period = horoscopeTypes[horoscopeType as keyof typeof horoscopeTypes] || 'okres';
 
     // 9. Ustalenie okresów ważności horoskopu
-    let validFrom = new Date();
+    const validFrom = new Date().toISOString();
     let validTo = new Date();
     
     switch (horoscopeType) {
@@ -197,7 +195,7 @@ Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjazn
 
     // 11. Wysłanie zapytania do OpenAI
     console.log(`Generowanie treści horoskopu dla zamówienia ${orderId}`);
-    const completion = await openai.chat.completions.create({
+    const completion: OpenAI.Chat.Completions.ChatCompletion = await openai.chat.completions.create({
       model: "gpt-4o", // lub inny wybrany model
       messages: [
         { role: "system", content: "Jesteś profesjonalnym astrologiem, który tworzy spersonalizowane horoskopy w języku polskim." },
@@ -228,7 +226,7 @@ Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjazn
         horoscope_type: horoscopeType,
         title: horoscopeTitle,
         content: horoscopeContent,
-        valid_from: validFrom.toISOString().split('T')[0],
+        valid_from: validFrom,
         valid_to: validTo ? validTo.toISOString().split('T')[0] : null
         // zodiac_sign field removed as it's redundant with user profile data
       })
