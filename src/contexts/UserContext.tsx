@@ -238,6 +238,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const answer = answerArray && answerArray.length > 0 ? answerArray[0] : null;
         
         // Usuń tablicę profile_answers i zastąp ją pojedynczym obiektem answer
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { profile_answers: _, ...questionData } = question;
         
         return {
