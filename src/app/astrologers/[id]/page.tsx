@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   AstrologerWithDetails, 
   Astrologer, 
@@ -76,10 +77,12 @@ export default async function AstrologerDetailPage({
                 {/* Zdjęcie astrologa */}
                 <div className="relative w-full aspect-square max-w-xs mx-auto overflow-hidden rounded-lg border border-gray-200 mb-4">
                   {astrologer.profile_image_url ? (
-                    <img 
+                    <Image 
                       src={astrologer.profile_image_url} 
                       alt={astrologer.display_name} 
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 300px"
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full text-5xl font-semibold text-gray-500 bg-gray-100">

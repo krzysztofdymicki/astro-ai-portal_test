@@ -18,6 +18,7 @@ import {
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -177,10 +178,14 @@ export default function HoroscopeDetailPage({ params }: PageProps) {
             <div className="flex items-center">
               {astrologer?.profile_image_url ? (
                 <div className="h-10 w-10 rounded-full overflow-hidden border border-indigo-400/30 mr-3">
-                  <img
+                  <Image
                     src={astrologer.profile_image_url}
                     alt={astrologer.display_name || 'Astrolog'}
                     className="h-full w-full object-cover"
+                    width={500}
+                    height={300}
+                    quality={80}
+                    priority={false}
                   />
                 </div>
               ) : (

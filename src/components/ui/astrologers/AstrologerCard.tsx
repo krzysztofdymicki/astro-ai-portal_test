@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Languages, Clock, Award } from 'lucide-react';
@@ -50,10 +51,12 @@ export default function AstrologerCard({
         <div className="flex flex-col items-center">
           {astrologer.profile_image_url ? (
             <div className={`relative ${compact ? 'w-20 h-20' : 'w-28 h-28'} rounded-full overflow-hidden mb-3 border-2 border-indigo-400/30 shadow-mystical`}>
-              <img 
+              <Image 
                 src={astrologer.profile_image_url} 
                 alt={astrologer.display_name} 
-                className="object-cover w-full h-full"
+                fill
+                className="object-cover"
+                sizes={compact ? "80px" : "112px"}
               />
             </div>
           ) : (
