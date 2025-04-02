@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     return new Response(JSON.stringify({ success: true }), { 
       headers: { 'Content-Type': 'application/json' }
     });
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Błąd podczas przetwarzania horoskopu:', error);
     return new Response(JSON.stringify({ 

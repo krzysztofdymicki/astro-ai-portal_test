@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Proces generowania horoskopu został rozpoczęty'
     });
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Błąd inicjacji procesu generowania horoskopu:', error);
     return NextResponse.json(
