@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       message: 'Proces generowania horoskopu został rozpoczęty w tle',
     });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Błąd inicjacji procesu generowania horoskopu:', error);
     return NextResponse.json(
@@ -107,6 +108,7 @@ async function backgroundProcessOrder(orderId: string) {
     // Przygotowanie informacji o odpowiedziach dla promptu
     let answersInfo = '';
     if (userAnswers && userAnswers.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       answersInfo = userAnswers.map((answer: any) => {
         return `Pytanie: ${answer.profile_questions.question}\nOdpowiedź: ${answer.answer}`;
       }).join('\n\n');
@@ -156,6 +158,7 @@ async function backgroundProcessOrder(orderId: string) {
         break;
       case 'lifetime':
         // Horoskop życiowy nie ma daty ważności
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         validTo = null as any;
         break;
     }

@@ -96,6 +96,7 @@ export default function HoroscopeDetailPage({ params }: PageProps) {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const astrologer = horoscope.astrologer as any;
 
   return (
