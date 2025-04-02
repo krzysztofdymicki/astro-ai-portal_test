@@ -192,11 +192,6 @@ Horoskop powinien być spersonalizowany i obejmować następujące aspekty:
 
 Horoskop powinien być napisany w języku polskim, w profesjonalnym ale przyjaznym tonie. Tekst powinien być sformatowany z użyciem znaczników HTML (paragrafy <p>, nagłówki <h3>, etc.) dla lepszej czytelności. Długość horoskopu powinna być odpowiednia do jego typu - dłuższy dla horoskopów miesięcznych, rocznych i życiowych; krótszy dla dziennych i tygodniowych.`;
 
-    // Wprowadź sztuczne opóźnienie (min. 1 minuta, max. 5 minut)
-    const delayMinutes = Math.floor(Math.random() * 4) + 1; // 1-5 minut
-    console.log(`Sztuczne opóźnienie: ${delayMinutes} minut(y) dla zamówienia ${orderId}`);
-    await new Promise(resolve => setTimeout(resolve, delayMinutes * 60 * 100));
-
     // 11. Wysłanie zapytania do OpenAI
     console.log(`Generowanie treści horoskopu dla zamówienia ${orderId}`);
     const completion: ChatCompletion = await openai.chat.completions.create({
