@@ -1,4 +1,7 @@
 // /app/api/horoscopes/generate-background/route.ts
+
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
