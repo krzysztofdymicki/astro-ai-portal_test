@@ -4,8 +4,8 @@ import { createClient } from '@/utils/supabase/server';
 import { ChatCompletion } from 'openai/resources/chat/completions';
 
 // Konfiguracja dla dłuższych czasów wykonania - sprawdź, czy Twój hosting to wspiera
-export const maxDuration = 300; // 5 minut
-export const runtime = 'nodejs'; // Lub 'edge', zależnie od Twojego hostingu
+//export const maxDuration = 60; // 5 minut
+//export const runtime = 'nodejs'; // Lub 'edge', zależnie od Twojego hostingu
 
 // Inicjalizacja klienta OpenAI
 const openai = new OpenAI({
